@@ -180,7 +180,7 @@
   function initMapa(stops) {
     document.getElementById('mapa').style.display = 'block';
     mapaObj = L.map('mapa').setView([39.5, -8.0], 6);
-    L.tileLayer('https:
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap'
     }).addTo(mapaObj);
 
