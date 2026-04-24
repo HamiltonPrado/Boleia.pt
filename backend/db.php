@@ -23,7 +23,7 @@ function uuid(): string {
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
 }
 
-function json_out(array $data, int $status = 200): never {
+function json_out(array $data, int $status = 200): void {
     http_response_code($status);
     header('Content-Type: application/json');
     echo json_encode($data);
@@ -34,7 +34,7 @@ function body(): array {
     return (array) json_decode(file_get_contents('php://input'), true);
 }
 
-function transaction(callable $fn): mixed {
+function transaction(callable $fn) {
     $db = db();
     $db->beginTransaction();
     try {
