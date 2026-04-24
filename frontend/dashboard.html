@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Boleia.pt — Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+</head>
+<body>
+
+<h1><i class="bi bi-car-front-fill" aria-hidden="true"></i> Boleia.pt</h1>
+<p class="user-bar">Olá, <b id="nome-user">...</b> &nbsp;|&nbsp; <a href="perfil.html"><i class="bi bi-person"></i> Perfil</a> &nbsp;<a href="#" onclick="sair(event)"><i class="bi bi-box-arrow-right"></i> Sair</a></p>
+<nav>
+  <a href="pesquisa.html"><i class="bi bi-search"></i> Pesquisar</a>
+  <a href="publicar.html" id="nav-publicar"><i class="bi bi-car-front-fill"></i> Oferecer Boleia</a>
+  <a href="reservas.html"><i class="bi bi-ticket-perforated"></i> Reservas</a>
+  <a href="perfil.html"><i class="bi bi-person-circle"></i> Perfil</a>
+</nav>
+
+<hr>
+
+<div id="banner-verificacao" class="alert alert-warning" style="display:none">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <span>A tua conta de condutor ainda não está verificada. Envia os teus documentos em <a href="perfil.html#documentos">Perfil → Documentos</a> para poderes aceitar passageiros.</span>
+</div>
+<div id="secao-passageiro">
+  <h2><i class="bi bi-ticket-perforated"></i> Próximas Reservas</h2>
+  <div id="reservas-tabela"></div>
+</div>
+
+<hr>
+<div id="secao-condutor" style="display:none">
+  <h2><i class="bi bi-speedometer2"></i> Dashboard Condutor</h2>
+  <div id="stats-condutor" class="stat-grid">
+    <div class="stat-card c-success skeleton-stat">
+      <div class="stat-label">Ganhos esta semana</div>
+      <div class="stat-value" id="stat-semana"><div class="skeleton" style="width:80px;height:26px"></div></div>
+    </div>
+    <div class="stat-card c-primary skeleton-stat">
+      <div class="stat-label">Ganhos totais</div>
+      <div class="stat-value" id="stat-total"><div class="skeleton" style="width:80px;height:26px"></div></div>
+    </div>
+    <div class="stat-card c-warning skeleton-stat">
+      <div class="stat-label">Total de viagens</div>
+      <div class="stat-value" id="stat-viagens"><div class="skeleton" style="width:40px;height:26px"></div></div>
+    </div>
+    <div class="stat-card c-muted skeleton-stat">
+      <div class="stat-label">Avaliação média</div>
+      <div class="stat-value" id="stat-rating"><div class="skeleton" style="width:60px;height:26px"></div></div>
+    </div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" role="tab" aria-selected="true"  aria-controls="aba-rotas"       onclick="mostrarAba(event,'aba-rotas')">
+      <i class="bi bi-map"></i> Rotas <span class="tab-count" id="cnt-rotas">—</span>
+    </button>
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="aba-pendentes"    onclick="mostrarAba(event,'aba-pendentes')">
+      <i class="bi bi-hourglass-split"></i> Pendentes <span class="tab-count" id="cnt-pendentes">—</span>
+    </button>
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="aba-confirmados"  onclick="mostrarAba(event,'aba-confirmados')">
+      <i class="bi bi-people-fill"></i> Confirmados <span class="tab-count" id="cnt-confirmados">—</span>
+    </button>
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="aba-historico"    onclick="mostrarAba(event,'aba-historico')">
+      <i class="bi bi-clock-history"></i> Histórico
+    </button>
+  </div>
+
+  <div id="aba-rotas" class="tab-panel active" role="tabpanel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h3 style="margin:0">As minhas rotas</h3>
+      <a href="publicar.html" class="btn-sm btn-info"><i class="bi bi-plus-circle"></i> Nova rota</a>
+    </div>
+    <div id="rotas-tabela"></div>
+  </div>
+
+  <div id="aba-pendentes" class="tab-panel" role="tabpanel">
+    <h3>Pedidos de reserva pendentes</h3>
+    <div id="pendentes-tabela"></div>
+  </div>
+
+  <div id="aba-confirmados" class="tab-panel" role="tabpanel">
+    <h3>Passageiros confirmados</h3>
+    <div id="confirmados-tabela"></div>
+  </div>
+
+  <div id="aba-historico" class="tab-panel" role="tabpanel">
+    <h3>Histórico de viagens</h3>
+    <div id="historico-tabela"></div>
+  </div>
+</div>
+
+<hr>
+<a href="index.html" class="back-link"><i class="bi bi-arrow-left"></i> Voltar ao início</a>
+
+<script src="utils.js"></script>
+<script>
+  let meuRole = null;
+
+  async function sair(e) {
+    e.preventDefault();
+    await fetch('../backend/auth/logout.php', { method: 'POST' });
+    window.location.href = 'login.html';
+  }
+
+  function mostrarAba(e, id) {
+    if (e) e.preventDefault();
+    const abas = ['aba-rotas','aba-pendentes','aba-confirmados','aba-historico'];
+    abas.forEach(a => {
+      const panel = document.getElementById(a);
+      panel.classList.toggle('active', a === id);
+    });
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      const active = btn.getAttribute('aria-controls') === id;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active);
+    });
+  }
+
+  async function init() {
+    const me = await fetch('../backend/auth/me.php');
+    if (!me.ok) { window.location.href = 'login.html'; return; }
+    const { user } = await me.json();
+    meuRole = user.role;
+
+    if (user.role === 'ADMIN') { window.location.replace('admin.html'); return; }
+
+    document.getElementById('nome-user').textContent = user.full_name;
+
+    document.getElementById('reservas-tabela').innerHTML = skeletonRows(3, [100,100,60,50,100,70,70]);
+    await carregarReservasPassageiro();
+
+    if (user.role === 'DRIVER' || user.role === 'BOTH') {
+      document.getElementById('secao-condutor').style.display = '';
+      document.getElementById('rotas-tabela').innerHTML     = skeletonRows(2, [160,50,80,40,60,70,80]);
+      document.getElementById('pendentes-tabela').innerHTML = skeletonRows(2, [100,60,50,120,120,30,60,60,80]);
+      document.getElementById('confirmados-tabela').innerHTML = skeletonRows(2, [60,50,100,80,120,120,30,60,80]);
+
+      const resultados = await Promise.allSettled([
+        carregarStatsCondutor(),
+        carregarRotas(),
+        carregarPendentes(),
+        carregarConfirmados(),
+        carregarHistorico(),
+        verificarStatusCondutor()
+      ]);
+      resultados.forEach((r, i) => {
+        if (r.status === 'rejected') console.error('Erro na função', i, r.reason);
+      });
+    }
+
+    if (user.role === 'ADMIN') {
+      const nav = document.querySelector('nav');
+      const a = document.createElement('a');
+      a.href = 'admin.html';
+      a.innerHTML = '<i class="bi bi-shield-lock"></i> Administração';
+      nav.appendChild(a);
+    }
+
+    if (user.role === 'PASSENGER') {
+      document.getElementById('nav-publicar').style.display = 'none';
+    }
+  }
+
+  async function verificarStatusCondutor() {
+    const res  = await fetch('../backend/users/documents.php');
+    const data = await res.json();
+    if (data.verification_status && data.verification_status !== 'APPROVED') {
+      document.getElementById('banner-verificacao').style.display = 'flex';
+    }
+  }
+
+  async function carregarReservasPassageiro() {
+    const bRes = await fetch('../backend/bookings/index.php');
+    const data = await bRes.json();
+    const bookings = data.bookings || [];
+    const hoje = new Date().toISOString().slice(0,10);
+    const proximas = bookings.filter(b =>
+      b.date >= hoje && !['CANCELLED_PASSENGER','CANCELLED_DRIVER','COMPLETED'].includes(b.status)
+    );
+
+    const div = document.getElementById('reservas-tabela');
+    if (proximas.length === 0) {
+      div.innerHTML = `<div class="empty-state">
+        <i class="bi bi-calendar-x"></i>
+        <p>Sem reservas próximas.</p>
+        <a href="pesquisa.html" class="btn-sm btn-info"><i class="bi bi-search"></i> Pesquisar viagens</a>
+      </div>`;
+      return;
+    }
+
+    div.innerHTML = `<div class="table-wrap"><table border="1" cellpadding="8"><thead><tr>
+        <th>Origem</th><th>Destino</th><th>Data</th><th>Hora</th><th>Condutor</th><th>Preço</th><th>Estado</th>
+      </tr></thead><tbody>
+      ${proximas.map(b => `<tr>
+        <td class="route-arrow"><span class="stop">${esc(b.pickup_address)}</span></td>
+        <td><span class="stop">${esc(b.dropoff_address)}</span></td>
+        <td>${fmt(b.date)}</td>
+        <td>${b.depart_time?.slice(0,5)}</td>
+        <td>${esc(b.driver_name)}</td>
+        <td class="price-tag">${Number(b.total_amount).toFixed(2)} <small>€</small></td>
+        <td><span class="badge badge-${b.status.toLowerCase().replace('_passenger','').replace('_driver','')}">${fmtStatus(b.status)}</span></td>
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  }
+
+  async function carregarStatsCondutor() {
+    const res = await fetch('../backend/routes/stats.php');
+    const data = await res.json();
+    if (!data.success) return;
+    const s = data.stats;
+    document.getElementById('stat-semana').textContent  = Number(s.week_earnings||0).toFixed(2) + ' €';
+    document.getElementById('stat-total').textContent   = Number(s.total_earnings||0).toFixed(2) + ' €';
+    document.getElementById('stat-viagens').textContent = s.total_trips || 0;
+    document.getElementById('stat-rating').textContent  = s.avg_rating ? Number(s.avg_rating).toFixed(1) + ' ★' : '—';
+  }
+
+  async function carregarRotas() {
+    const res = await fetch('../backend/routes/index.php');
+    const { routes } = await res.json();
+    const div = document.getElementById('rotas-tabela');
+
+    if (!routes || routes.length === 0) {
+      div.innerHTML = `<div class="empty-state">
+        <i class="bi bi-map"></i>
+        <p>Ainda não tens rotas criadas.</p>
+        <a href="publicar.html" class="btn-sm btn-info"><i class="bi bi-plus-circle"></i> Publicar primeira rota</a>
+      </div>`;
+      document.getElementById('cnt-rotas').textContent = '0';
+      return;
+    }
+
+    document.getElementById('cnt-rotas').textContent = routes.length;
+
+    div.innerHTML = `<div class="table-wrap"><table border="1" cellpadding="8"><thead><tr>
+        <th>Rota</th><th>Hora</th><th>Dias</th><th>Lugares</th><th>Preço/pessoa</th><th>Estado</th><th>Ações</th>
+      </tr></thead><tbody>
+      ${routes.map(r => {
+        const stops = JSON.parse(r.stops || '[]');
+        const origem  = stops[0]?.address || '—';
+        const destino = stops[stops.length-1]?.address || '—';
+        const dias = diasSemana(r.recurrence);
+        const semViagens = !r.next_occurrence;
+        return `<tr>
+          <td><span class="icon-text"><i class="bi bi-geo-alt-fill" style="color:var(--primary)"></i> ${esc(origem)}</span><br>
+              <span class="icon-text" style="margin-top:3px"><i class="bi bi-flag-fill" style="color:var(--success)"></i> ${esc(destino)}</span></td>
+          <td>${r.depart_time?.slice(0,5)}</td>
+          <td>${dias}</td>
+          <td>${r.total_seats}</td>
+          <td class="price-tag">${Number(r.price_per_seat).toFixed(2)} <small>€</small></td>
+          <td>
+            <span class="badge badge-${(r.status||'').toLowerCase()}">${fmtRotaStatus(r.status)}</span>
+            ${semViagens ? '<br><span class="badge badge-pending" style="margin-top:4px"><i class="bi bi-exclamation-triangle-fill"></i> Sem viagens</span>' : ''}
+          </td>
+          <td style="white-space:nowrap">
+            <a href="#" onclick="gerarOcorrencias(event,'${r.id}')" class="btn-sm btn-info"><i class="bi bi-calendar-plus"></i> Gerar</a>
+            <a href="#" onclick="apagarRota(event,'${r.id}')" class="btn-sm btn-danger"><i class="bi bi-trash"></i> Apagar</a>
+          </td>
+        </tr>`;
+      }).join('')}
+      </tbody></table></div>`;
+  }
+
+  async function carregarPendentes() {
+    const res = await fetch('../backend/bookings/driver_bookings.php?status=PENDING');
+    const data = await res.json();
+    const pending = data.bookings || [];
+    const div = document.getElementById('pendentes-tabela');
+
+    document.getElementById('cnt-pendentes').textContent = pending.length || '0';
+
+    if (pending.length === 0) {
+      div.innerHTML = `<div class="empty-state">
+        <i class="bi bi-hourglass"></i>
+        <p>Sem pedidos pendentes de momento.</p>
+      </div>`;
+      return;
+    }
+
+    div.innerHTML = `<div class="table-wrap"><table border="1" cellpadding="8"><thead><tr>
+        <th>Passageiro</th><th>Data</th><th>Hora</th><th>Embarque</th><th>Desembarque</th><th>Lugares</th><th>Total</th><th>Nota</th><th>Ações</th>
+      </tr></thead><tbody>
+      ${pending.map(b => `<tr>
+        <td><b>${esc(b.passenger_name)}</b></td>
+        <td>${fmt(b.date)}</td>
+        <td>${b.depart_time?.slice(0,5)}</td>
+        <td>${esc(b.pickup_address)}</td>
+        <td>${esc(b.dropoff_address)}</td>
+        <td>${b.seats_booked}</td>
+        <td class="price-tag">${Number(b.total_amount).toFixed(2)} <small>€</small></td>
+        <td style="max-width:160px;font-size:0.82rem;color:var(--muted)">${esc(b.note_to_driver || '—')}</td>
+        <td style="white-space:nowrap">
+          <a href="#" onclick="atualizarEstado(event,'${b.id}','CONFIRMED')" class="btn-sm btn-ok"><i class="bi bi-check-circle-fill"></i> Aceitar</a>
+          <a href="#" onclick="atualizarEstado(event,'${b.id}','CANCELLED_DRIVER')" class="btn-sm btn-danger"><i class="bi bi-x-circle-fill"></i> Recusar</a>
+        </td>
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  }
+
+  async function carregarConfirmados() {
+    const res = await fetch('../backend/bookings/driver_bookings.php?status=CONFIRMED');
+    const data = await res.json();
+    const confirmed = data.bookings || [];
+    const div = document.getElementById('confirmados-tabela');
+
+    document.getElementById('cnt-confirmados').textContent = confirmed.length || '0';
+
+    if (confirmed.length === 0) {
+      div.innerHTML = `<div class="empty-state">
+        <i class="bi bi-people"></i>
+        <p>Sem passageiros confirmados para próximas viagens.</p>
+      </div>`;
+      return;
+    }
+
+    div.innerHTML = `<div class="table-wrap"><table border="1" cellpadding="8"><thead><tr>
+        <th>Data</th><th>Hora</th><th>Passageiro</th><th>Telemóvel</th><th>Embarque</th><th>Desembarque</th><th>Lugares</th><th>Total</th><th>Ações</th>
+      </tr></thead><tbody>
+      ${confirmed.map(b => `<tr>
+        <td>${fmt(b.date)}</td>
+        <td>${b.depart_time?.slice(0,5)}</td>
+        <td><b>${esc(b.passenger_name)}</b></td>
+        <td>${esc(b.phone || '—')}</td>
+        <td>${esc(b.pickup_address)}</td>
+        <td>${esc(b.dropoff_address)}</td>
+        <td>${b.seats_booked}</td>
+        <td class="price-tag">${Number(b.total_amount).toFixed(2)} <small>€</small></td>
+        <td style="white-space:nowrap">
+          <a href="#" onclick="completarViagem(event,'${b.id}')" class="btn-sm btn-ok"><i class="bi bi-check2-all"></i> Completar</a>
+          <a href="#" onclick="cancelarCondutor(event,'${b.id}')" class="btn-sm btn-danger"><i class="bi bi-x-circle"></i> Cancelar</a>
+        </td>
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  }
+
+  async function carregarHistorico() {
+    const res = await fetch('../backend/bookings/driver_bookings.php?status=COMPLETED');
+    const data = await res.json();
+    const history = data.bookings || [];
+    const div = document.getElementById('historico-tabela');
+
+    if (history.length === 0) {
+      div.innerHTML = `<div class="empty-state">
+        <i class="bi bi-clock-history"></i>
+        <p>Sem viagens no histórico ainda.</p>
+      </div>`;
+      return;
+    }
+
+    div.innerHTML = `<div class="table-wrap"><table border="1" cellpadding="8"><thead><tr>
+        <th>Data</th><th>Hora</th><th>Passageiro</th><th>Embarque</th><th>Desembarque</th><th>Total recebido</th>
+      </tr></thead><tbody>
+      ${history.map(b => `<tr>
+        <td>${fmt(b.date)}</td>
+        <td>${b.depart_time?.slice(0,5)}</td>
+        <td>${esc(b.passenger_name)}</td>
+        <td>${esc(b.pickup_address)}</td>
+        <td>${esc(b.dropoff_address)}</td>
+        <td class="price-tag">${Number(b.total_amount).toFixed(2)} <small>€</small></td>
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  }
+
+  async function atualizarEstado(e, id, status) {
+    e.preventDefault();
+    const res  = await fetch(`../backend/bookings/update_status.php?id=${id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(status === 'CONFIRMED' ? 'Reserva aceite.' : 'Reserva recusada.', status === 'CONFIRMED' ? 'success' : 'warning');
+      await Promise.all([carregarPendentes(), carregarConfirmados()]);
+    } else {
+      toast(data.message || 'Erro ao atualizar estado.', 'danger');
+    }
+  }
+
+  async function cancelarCondutor(e, id) {
+    e.preventDefault();
+    if (!confirm('Cancelar esta reserva?')) return;
+    const res  = await fetch(`../backend/bookings/driver_cancel.php?id=${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) {
+      toast('Reserva cancelada.', 'warning');
+      await Promise.all([carregarPendentes(), carregarConfirmados()]);
+    } else {
+      toast(data.message || 'Erro ao cancelar.', 'danger');
+    }
+  }
+
+  async function completarViagem(e, id) {
+    e.preventDefault();
+    if (!confirm('Marcar esta reserva como completada?')) return;
+    const res  = await fetch(`../backend/bookings/complete.php?id=${id}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status: 'COMPLETED' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast('Viagem marcada como concluída!', 'success');
+      await Promise.all([carregarConfirmados(), carregarHistorico(), carregarStatsCondutor()]);
+    } else {
+      toast(data.message || 'Erro ao completar viagem.', 'danger');
+    }
+  }
+
+  async function gerarOcorrencias(e, routeId) {
+    e.preventDefault();
+    if (!confirm('Gerar viagens para os próximos 30 dias?')) return;
+    const res  = await fetch(`../backend/routes/generate.php?id=${routeId}`, { method: 'POST' });
+    const data = await res.json();
+    toast(data.message, data.success ? 'success' : 'danger');
+    if (data.success) await carregarRotas();
+  }
+
+  async function apagarRota(e, routeId) {
+    e.preventDefault();
+    if (!confirm('Apagar esta rota? Esta ação não pode ser desfeita.')) return;
+    const res  = await fetch(`../backend/routes/detail.php?id=${routeId}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) {
+      toast('Rota apagada.', 'warning');
+      await carregarRotas();
+    } else {
+      toast(data.message || 'Erro ao apagar rota.', 'danger');
+    }
+  }
+
+  function diasSemana(rec) {
+    if (!rec) return '—';
+    try {
+      const r = typeof rec === 'string' ? JSON.parse(rec) : rec;
+      const nomes = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+      return (r.days_of_week || []).map(d => nomes[d]).join(', ');
+    } catch { return '—'; }
+  }
+
+  const STATUS_PT = {
+    PENDING:             'Pendente',
+    CONFIRMED:           'Confirmada',
+    COMPLETED:           'Concluída',
+    CANCELLED_PASSENGER: 'Cancelada pelo passageiro',
+    CANCELLED_DRIVER:    'Cancelada pelo condutor',
+    NO_SHOW:             'Não compareceu',
+  };
+  function fmtStatus(s) { return STATUS_PT[s] || s; }
+  const ROTA_STATUS_PT = { ACTIVE: 'Ativa', PAUSED: 'Pausada', ARCHIVED: 'Arquivada' };
+  function fmtRotaStatus(s) { return ROTA_STATUS_PT[s] || s; }
+  function fmt(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  init();
+</script>
+
+</body>
+</html>

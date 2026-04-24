@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Boleia.pt — Administração</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+</head>
+<body>
+
+<h1><i class="bi bi-car-front-fill" aria-hidden="true"></i> Boleia.pt — Administração</h1>
+<p><a href="dashboard.html">Dashboard</a> | <a href="#" onclick="sair(event)">Sair</a></p>
+
+<hr>
+
+<p>
+  <b>Secção:</b>
+  <a href="#" onclick="mostrarAba(event,'aba-stats')">Estatísticas</a> |
+  <a href="#" onclick="mostrarAba(event,'aba-utilizadores')">Utilizadores</a> |
+  <a href="#" onclick="mostrarAba(event,'aba-condutores')">Condutores Pendentes</a> |
+  <a href="#" onclick="mostrarAba(event,'aba-documentos')">Documentos</a> |
+  <a href="#" onclick="mostrarAba(event,'aba-atividade')">Atividade Recente</a>
+</p>
+
+<hr>
+<div id="aba-stats">
+  <h2>Estatísticas Gerais</h2>
+  <div id="stats-conteudo"><p>A carregar...</p></div>
+</div>
+<div id="aba-utilizadores" style="display:none">
+  <h2>Utilizadores</h2>
+  <form onsubmit="pesquisarUtilizadores(event)">
+    <label>Pesquisar: <input type="text" id="search-user" size="25" placeholder="Nome ou email" /></label>
+    <button type="submit">Pesquisar</button>
+    <button type="button" onclick="carregarUtilizadores(1)">Ver todos</button>
+  </form><br>
+  <div id="utilizadores-conteudo"><p>A carregar...</p></div>
+  <div id="paginacao-utilizadores"></div>
+</div>
+<div id="aba-condutores" style="display:none">
+  <h2>Condutores Pendentes de Aprovação</h2>
+  <div id="condutores-conteudo"><p>A carregar...</p></div>
+</div>
+<div id="aba-documentos" style="display:none">
+  <h2>Documentos para Revisão</h2>
+  <div id="documentos-conteudo"><p>A carregar...</p></div>
+</div>
+<div id="aba-atividade" style="display:none">
+  <h2>Atividade Recente</h2>
+  <div id="atividade-conteudo"><p>A carregar...</p></div>
+</div>
+
+<hr>
+<a href="dashboard.html">← Voltar ao dashboard</a>
+
+<script src="utils.js"></script>
+<script>
+  async function sair(e) {
+    e.preventDefault();
+    await fetch('../backend/auth/logout.php', { method: 'POST' });
+    window.location.href = 'login.html';
+  }
+
+  function mostrarAba(e, id) {
+    e.preventDefault();
+    const abas = ['aba-stats','aba-utilizadores','aba-condutores','aba-documentos','aba-atividade'];
+    abas.forEach(a => document.getElementById(a).style.display = (a === id) ? '' : 'none');
+    if (id === 'aba-utilizadores') carregarUtilizadores(1);
+    if (id === 'aba-condutores')   carregarCondutores();
+    if (id === 'aba-documentos')   carregarDocumentos();
+    if (id === 'aba-atividade')    carregarAtividade();
+  }
+
+  async function init() {
+    const me = await fetch('../backend/auth/me.php');
+    if (!me.ok) { window.location.href = 'login.html'; return; }
+    const { user } = await me.json();
+    if (user.role !== 'ADMIN') { alert('Acesso negado.'); window.location.href = 'dashboard.html'; return; }
+    await carregarStats();
+  }
+
+  async function carregarStats() {
+    const res  = await fetch('../backend/admin/stats.php');
+    const data = await res.json();
+    const div  = document.getElementById('stats-conteudo');
+    if (!data.success) { div.innerHTML = `<p style="color:red">${esc(data.message)}</p>`; return; }
+    const s = data.stats;
+    div.innerHTML = `<table border="1" cellpadding="10">
+      <tr>
+        <td><b>Total de utilizadores</b><br>${s.total_users || 0}</td>
+        <td><b>Total de condutores</b><br>${s.total_drivers || 0}</td>
+        <td><b>Condutores verificados</b><br>${s.verified_drivers || 0}</td>
+      </tr>
+      <tr>
+        <td><b>Total de reservas</b><br>${s.total_bookings || 0}</td>
+        <td><b>Reservas completadas</b><br>${s.completed_bookings || 0}</td>
+        <td><b>Verificações pendentes</b><br>${s.pending_verification || 0}</td>
+      </tr>
+    </table>`;
+  }
+
+  let paginaAtual = 1;
+
+  async function carregarUtilizadores(pagina, search) {
+    paginaAtual = pagina;
+    const searchVal = search || document.getElementById('search-user').value.trim();
+    const params = `page=${pagina}&limit=20${searchVal ? '&search=' + encodeURIComponent(searchVal) : ''}`;
+    const res  = await fetch(`../backend/admin/users.php?${params}`);
+    const data = await res.json();
+    const div  = document.getElementById('utilizadores-conteudo');
+    const users = data.users || [];
+
+    if (users.length === 0) { div.innerHTML = '<p>Sem utilizadores encontrados.</p>'; return; }
+
+    const roleLabel  = { PASSENGER: 'Passageiro', DRIVER: 'Condutor', BOTH: 'Condutor/Passageiro', ADMIN: 'Admin' };
+    const statusLabel = { ACTIVE: 'Ativo', SUSPENDED: 'Suspenso', PENDING: 'Pendente', VERIFIED: 'Verificado' };
+
+    div.innerHTML = `<table border="1" cellpadding="8"><thead><tr>
+        <th>Nome</th><th>Email</th><th>Tipo</th><th>Estado</th><th>Registado em</th><th>Ações</th>
+      </tr></thead><tbody>
+      ${users.map(u => `<tr>
+        <td>${esc(u.full_name)}</td>
+        <td>${esc(u.email)}</td>
+        <td>${roleLabel[u.role] || u.role}</td>
+        <td>${statusLabel[u.status] || u.status}</td>
+        <td>${fmt(u.created_at?.slice(0,10))}</td>
+        <td>
+          ${u.status !== 'SUSPENDED'
+            ? `<a href="#" onclick="atualizarEstadoUser(event,'${u.id}','SUSPENDED')" class="btn-sm btn-danger"><i class="bi bi-slash-circle"></i> Suspender</a>`
+            : `<a href="#" onclick="atualizarEstadoUser(event,'${u.id}','ACTIVE')" class="btn-sm btn-ok"><i class="bi bi-check-circle"></i> Reativar</a>`
+          }
+        </td>
+      </tr>`).join('')}
+      </tbody></table>`;
+
+    const total = data.pagination?.total || data.total || users.length;
+    const totalPags = Math.ceil(total / 20);
+    const pDiv = document.getElementById('paginacao-utilizadores');
+    if (totalPags <= 1) { pDiv.innerHTML = ''; return; }
+    let html = 'Página: ';
+    for (let i = 1; i <= totalPags; i++) {
+      html += i === pagina
+        ? `<b>${i}</b> `
+        : `<a href="#" onclick="carregarUtilizadores(${i}); return false">${i}</a> `;
+    }
+    pDiv.innerHTML = html;
+  }
+
+  function pesquisarUtilizadores(e) {
+    e.preventDefault();
+    carregarUtilizadores(1);
+  }
+
+  async function atualizarEstadoUser(e, userId, status) {
+    e.preventDefault();
+    const acao = status === 'SUSPENDED' ? 'suspender' : 'reativar';
+    if (!confirm(`Tens a certeza que queres ${acao} este utilizador?`)) return;
+    const res  = await fetch(`../backend/admin/update_user_status.php?id=${userId}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (data.success) await carregarUtilizadores(paginaAtual);
+    else alert(data.message);
+  }
+
+  async function carregarCondutores() {
+    const res  = await fetch('../backend/admin/drivers_pending.php');
+    const data = await res.json();
+    const div  = document.getElementById('condutores-conteudo');
+    const drivers = data.drivers || [];
+
+    if (drivers.length === 0) { div.innerHTML = '<p>Sem condutores pendentes de aprovação.</p>'; return; }
+
+    div.innerHTML = `<table border="1" cellpadding="8"><thead><tr>
+        <th>Nome</th><th>Email</th><th>Telemóvel</th><th>Registado em</th><th>Ações</th>
+      </tr></thead><tbody>
+      ${drivers.map(d => `<tr>
+        <td>${esc(d.full_name)}</td>
+        <td>${esc(d.email)}</td>
+        <td>${esc(d.phone || '—')}</td>
+        <td>${fmt(d.uploaded_at?.slice(0,10))}</td>
+        <td style="white-space:nowrap">
+          <a href="#" onclick="rever(event,'driver','${d.id}','APPROVED')" class="btn-sm btn-ok"><i class="bi bi-check-circle-fill"></i> Aprovar</a>
+          <a href="#" onclick="rever(event,'driver','${d.id}','REJECTED')" class="btn-sm btn-danger"><i class="bi bi-x-circle-fill"></i> Rejeitar</a>
+        </td>
+      </tr>`).join('')}
+      </tbody></table>`;
+  }
+
+  async function carregarDocumentos() {
+    const res  = await fetch('../backend/admin/documents.php');
+    const data = await res.json();
+    const div  = document.getElementById('documentos-conteudo');
+    const docs = data.documents || [];
+
+    if (docs.length === 0) { div.innerHTML = '<p>Sem documentos pendentes de revisão.</p>'; return; }
+
+    const tipoLabel = {
+      LICENSE:   'Carta de Condução',
+      ID:        'Cartão de Cidadão',
+      INSURANCE: 'Seguro'
+    };
+
+    div.innerHTML = `<table border="1" cellpadding="8"><thead><tr>
+        <th>Utilizador</th><th>Email</th><th>Tipo</th><th>Enviado em</th><th>URL</th><th>Ações</th>
+      </tr></thead><tbody>
+      ${docs.map(d => `<tr>
+        <td>${esc(d.full_name || '—')}</td>
+        <td>${esc(d.email || '—')}</td>
+        <td>${tipoLabel[d.type] || d.type}</td>
+        <td>${fmt(d.uploaded_at?.slice(0,10))}</td>
+        <td>${d.file_url ? `<a href="${esc(d.file_url)}" target="_blank">Ver</a>` : '—'}</td>
+        <td style="white-space:nowrap">
+          <a href="#" onclick="rever(event,'document','${d.id}','APPROVED')" class="btn-sm btn-ok"><i class="bi bi-check-circle-fill"></i> Aprovar</a>
+          <a href="#" onclick="rever(event,'document','${d.id}','REJECTED')" class="btn-sm btn-danger"><i class="bi bi-x-circle-fill"></i> Rejeitar</a>
+        </td>
+      </tr>`).join('')}
+      </tbody></table>`;
+  }
+
+  async function rever(e, tipo, id, status) {
+    e.preventDefault();
+    const endpoint = tipo === 'driver'
+      ? `admin/review_driver.php?id=${id}`
+      : `admin/review_document.php?id=${id}`;
+    const acao = status === 'APPROVED' ? 'aprovar' : 'rejeitar';
+    if (!confirm(`Tens a certeza que queres ${acao}?`)) return;
+    const res  = await fetch(endpoint, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: status === 'APPROVED' ? 'approve' : 'reject' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (tipo === 'driver') await carregarCondutores();
+      else await carregarDocumentos();
+    } else {
+      alert(data.message);
+    }
+  }
+
+  async function carregarAtividade() {
+    const res  = await fetch('../backend/admin/activity.php');
+    const data = await res.json();
+    const div  = document.getElementById('atividade-conteudo');
+    const rows = data.rows || [];
+
+    if (rows.length === 0) { div.innerHTML = '<p>Sem atividade recente.</p>'; return; }
+
+    div.innerHTML = `<p><small>Reservas confirmadas/completadas nos últimos 28 dias.</small></p>
+      <table border="1" cellpadding="8"><thead><tr>
+        <th>Dia</th><th>Nº de viagens</th>
+      </tr></thead><tbody>
+      ${rows.map(r => `<tr>
+        <td>${fmt(r.day)}</td>
+        <td>${r.trips}</td>
+      </tr>`).join('')}
+      </tbody></table>`;
+  }
+
+  function fmtDatetime(dt) {
+    if (!dt) return '—';
+    const d = new Date(dt);
+    return d.toLocaleString('pt-PT');
+  }
+  function fmt(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  init();
+</script>
+
+</body>
+</html>

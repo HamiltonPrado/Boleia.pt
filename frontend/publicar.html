@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Boleia.pt — Oferecer Boleia</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+
+<h1><i class="bi bi-car-front-fill" aria-hidden="true"></i> Boleia.pt</h1>
+<p class="user-bar">Olá, <b id="nome-user">...</b> &nbsp;|&nbsp; <a href="perfil.html"><i class="bi bi-person"></i> Perfil</a> &nbsp;<a href="#" onclick="sair(event)"><i class="bi bi-box-arrow-right"></i> Sair</a></p>
+<nav>
+  <a href="dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a>
+  <a href="pesquisa.html"><i class="bi bi-search"></i> Pesquisar</a>
+  <a href="reservas.html"><i class="bi bi-ticket-perforated"></i> Reservas</a>
+  <a href="perfil.html"><i class="bi bi-person-circle"></i> Perfil</a>
+</nav>
+
+<hr>
+
+<h2>Oferecer Boleia</h2>
+
+<form onsubmit="publicar(event)">
+
+  <h3>Rota</h3>
+  <p><small>Escreve o endereço e clica em <b>📍 Localizar</b>, ou clica diretamente no mapa para posicionar a paragem selecionada.</small></p>
+
+  <div id="paragens">
+    <div class="paragem" data-index="0">
+      <b>Paragem 1 — Origem</b>
+      <button type="button" onclick="selecionarParagem(0)" id="btn-sel-0">[ selecionar ]</button><br>
+      <label>Endereço:
+        <input type="text" name="address" placeholder="Ex: Sete Rios, Lisboa" size="40" required />
+        <button type="button" onclick="geocodificar(0)"><i class="bi bi-geo-alt-fill"></i> Localizar</button>
+      </label>
+      <input type="hidden" name="lat" value="0" />
+      <input type="hidden" name="lng" value="0" />
+      <br><br>
+    </div>
+    <div class="paragem" data-index="1">
+      <b>Paragem 2 — Destino</b>
+      <button type="button" onclick="selecionarParagem(1)" id="btn-sel-1">[ selecionar ]</button><br>
+      <label>Endereço:
+        <input type="text" name="address" placeholder="Ex: Campanhã, Porto" size="40" required />
+        <button type="button" onclick="geocodificar(1)">📍 Localizar</button>
+      </label>
+      <input type="hidden" name="lat" value="0" />
+      <input type="hidden" name="lng" value="0" />
+      <br><br>
+    </div>
+  </div>
+  <button type="button" onclick="adicionarParagem()"><i class="bi bi-plus-circle"></i> Adicionar paragem intermédia</button>
+
+  <br><br>
+  <p><small id="info-mapa">Paragem selecionada para clique no mapa: <b id="sel-label">Paragem 1</b></small></p>
+  <div id="mapa" style="height:400px;border:1px solid #ccc"></div>
+  <br>
+
+  <h3>Horário</h3>
+  <label>Hora de partida:<br>
+    <input type="time" id="hora" required />
+  </label><br><br>
+
+  <label>Data de início:<br>
+    <input type="date" id="valid_from" required />
+  </label><br><br>
+
+  <label>Data de fim (opcional):<br>
+    <input type="date" id="valid_until" />
+  </label><br><br>
+
+  <fieldset>
+    <legend>Dias da semana</legend>
+    <label><input type="checkbox" name="dia" value="1" /> Segunda</label>
+    <label><input type="checkbox" name="dia" value="2" /> Terça</label>
+    <label><input type="checkbox" name="dia" value="3" /> Quarta</label>
+    <label><input type="checkbox" name="dia" value="4" /> Quinta</label>
+    <label><input type="checkbox" name="dia" value="5" /> Sexta</label>
+    <label><input type="checkbox" name="dia" value="6" /> Sábado</label>
+    <label><input type="checkbox" name="dia" value="0" /> Domingo</label>
+  </fieldset><br>
+
+  <h3>Lugares e Preço</h3>
+  <label>Lugares disponíveis:<br>
+    <select id="lugares">
+      <option>1</option><option>2</option><option>3</option><option>4</option>
+    </select>
+  </label><br><br>
+
+  <label>Preço por pessoa (€):<br>
+    <input type="number" id="preco" min="0" step="0.01" placeholder="Ex: 12.00" size="10" required />
+  </label><br><br>
+
+  <label>Observações (opcional):<br>
+    <textarea id="obs" rows="3" cols="40"></textarea>
+  </label><br><br>
+
+  <button type="submit"><i class="bi bi-send-fill"></i> Publicar Viagem</button>
+</form>
+
+<p id="msg-publicar" style="display:none"></p>
+
+<hr>
+<a href="dashboard.html" class="back-link"><i class="bi bi-arrow-left"></i> Voltar ao dashboard</a>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="utils.js"></script>
+<script>
+  let numParagens  = 2;
+  let mapaIniciado = false;
+  let mapa, polyline;
+  let marcadores   = {};
+  let paradaAtiva  = 0;
+
+  function initMapa() {
+    mapa = L.map('mapa').setView([39.5, -8.0], 6);
+    L.tileLayer('https:
+      attribution: '© OpenStreetMap'
+    }).addTo(mapa);
+
+    mapa.on('click', async function(e) {
+      const { lat, lng } = e.latlng;
+      colocarMarcador(paradaAtiva, lat, lng);
+      try {
+        const res  = await fetch(
+          `https:
+          { headers: { 'Accept-Language': 'pt' } }
+        );
+        const data = await res.json();
+        const addr = data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        const paragensEls = document.querySelectorAll('.paragem');
+        if (paragensEls[paradaAtiva]) {
+          paragensEls[paradaAtiva].querySelector('[name="address"]').value = addr;
+        }
+      } catch {}
+      atualizarPolyline();
+    });
+
+    mapaIniciado = true;
+  }
+
+  function selecionarParagem(idx) {
+    paradaAtiva = idx;
+    const paragensEls = document.querySelectorAll('.paragem');
+    const label = paragensEls[idx]?.querySelector('b')?.textContent || `Paragem ${idx+1}`;
+    document.getElementById('sel-label').textContent = label;
+  }
+
+  async function geocodificar(idx) {
+    const paragensEls = document.querySelectorAll('.paragem');
+    const div  = paragensEls[idx];
+    if (!div) return;
+    const addr = div.querySelector('[name="address"]').value.trim();
+    if (!addr) { alert('Escreve um endereço primeiro.'); return; }
+
+    try {
+      const res  = await fetch(
+        `https:
+        { headers: { 'Accept-Language': 'pt' } }
+      );
+      const data = await res.json();
+      if (!data.length) { alert('Endereço não encontrado. Tenta ser mais específico.'); return; }
+      const lat = parseFloat(data[0].lat);
+      const lng = parseFloat(data[0].lon);
+      colocarMarcador(idx, lat, lng);
+      atualizarPolyline();
+      selecionarParagem(idx);
+    } catch { alert('Erro ao pesquisar endereço.'); }
+  }
+
+  function colocarMarcador(idx, lat, lng) {
+    const paragensEls = document.querySelectorAll('.paragem');
+    const div = paragensEls[idx];
+    if (!div) return;
+
+    div.querySelector('[name="lat"]').value = lat;
+    div.querySelector('[name="lng"]').value = lng;
+
+    const label = div.querySelector('b')?.textContent || `Paragem ${idx+1}`;
+
+    if (marcadores[idx]) {
+      marcadores[idx].setLatLng([lat, lng]);
+    } else {
+      marcadores[idx] = L.marker([lat, lng], { draggable: true })
+        .addTo(mapa)
+        .bindPopup(label)
+        .openPopup();
+
+      marcadores[idx].on('dragend', async function() {
+        const pos = marcadores[idx].getLatLng();
+        div.querySelector('[name="lat"]').value = pos.lat;
+        div.querySelector('[name="lng"]').value = pos.lng;
+        try {
+          const res  = await fetch(
+            `https:
+            { headers: { 'Accept-Language': 'pt' } }
+          );
+          const data = await res.json();
+          if (data.display_name) div.querySelector('[name="address"]').value = data.display_name;
+        } catch {}
+        atualizarPolyline();
+      });
+    }
+
+    mapa.setView([lat, lng], Math.max(mapa.getZoom(), 12));
+  }
+
+  function atualizarPolyline() {
+    const pontos = Object.keys(marcadores)
+      .sort((a, b) => a - b)
+      .map(i => marcadores[i].getLatLng());
+
+    if (polyline) mapa.removeLayer(polyline);
+    if (pontos.length >= 2) {
+      polyline = L.polyline(pontos, { color: 'blue', weight: 3 }).addTo(mapa);
+      mapa.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+    }
+  }
+
+  function adicionarParagem() {
+    const idx = document.querySelectorAll('.paragem').length;
+    numParagens++;
+    const div = document.createElement('div');
+    div.className = 'paragem';
+    div.dataset.index = idx;
+    div.innerHTML = `<b>Paragem ${numParagens} — Intermédia</b>
+      <button type="button" onclick="selecionarParagem(${idx})" id="btn-sel-${idx}">[ selecionar ]</button><br>
+      <label>Endereço:
+        <input type="text" name="address" placeholder="Ex: Coimbra" size="40" />
+        <button type="button" onclick="geocodificar(${idx})"><i class="bi bi-geo-alt-fill"></i> Localizar</button>
+      </label>
+      <input type="hidden" name="lat" value="0" />
+      <input type="hidden" name="lng" value="0" />
+      <button type="button" onclick="removerParagem(this, ${idx})">Remover</button><br><br>`;
+
+    const todas = document.querySelectorAll('.paragem');
+    const ultima = todas[todas.length - 1];
+    document.getElementById('paragens').insertBefore(div, ultima);
+  }
+
+  function removerParagem(btn, idx) {
+    if (marcadores[idx]) { mapa.removeLayer(marcadores[idx]); delete marcadores[idx]; }
+    btn.parentElement.remove();
+    atualizarPolyline();
+  }
+
+  async function publicar(e) {
+    e.preventDefault();
+    const msg = document.getElementById('msg-publicar');
+    msg.style.display = 'none';
+
+    const dias = [...document.querySelectorAll('input[name="dia"]:checked')].map(el => parseInt(el.value));
+    if (dias.length === 0) {
+      msg.style.color = 'red'; msg.textContent = 'Seleciona pelo menos um dia da semana.';
+      msg.style.display = 'block'; return;
+    }
+
+    const paragensEls = document.querySelectorAll('.paragem');
+    const stops = [...paragensEls].map((div, i) => ({
+      stop_order:  i + 1,
+      address:     div.querySelector('[name="address"]').value.trim(),
+      lat:         parseFloat(div.querySelector('[name="lat"]').value) || 0,
+      lng:         parseFloat(div.querySelector('[name="lng"]').value) || 0,
+      is_optional: i > 0 && i < paragensEls.length - 1
+    }));
+
+    if (stops.some(s => !s.address)) {
+      msg.style.color = 'red'; msg.textContent = 'Preenche o endereço de todas as paragens.';
+      msg.style.display = 'block'; return;
+    }
+
+    const body = {
+      total_seats:    parseInt(document.getElementById('lugares').value),
+      price_per_seat: parseFloat(document.getElementById('preco').value),
+      depart_time:    document.getElementById('hora').value.slice(0, 5),
+      recurrence:     { days_of_week: dias },
+      valid_from:     document.getElementById('valid_from').value,
+      valid_until:    document.getElementById('valid_until').value || null,
+      notes:          document.getElementById('obs').value || null,
+      stops
+    };
+
+    const res  = await fetch('../backend/routes/index.php', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    msg.style.color = data.success ? 'green' : 'red';
+    msg.innerHTML   = data.success
+      ? 'Rota criada! Agora vai ao <a href="dashboard.html">Dashboard → Minhas Rotas</a> e clica em <b>"Gerar viagens"</b> para disponibilizar as datas aos passageiros.'
+      : esc(data.message);
+    msg.style.display = 'block';
+  }
+
+  async function sair(e) {
+    e.preventDefault();
+    await fetch('../backend/auth/logout.php', { method: 'POST' });
+    window.location.href = 'login.html';
+  }
+
+  async function init() {
+    const me = await fetch('../backend/auth/me.php');
+    if (!me.ok) { window.location.href = 'login.html'; return; }
+    const { user } = await me.json();
+
+    if (user.role === 'PASSENGER') {
+      document.querySelector('h2').textContent = 'Acesso restrito';
+      document.querySelector('form').innerHTML = '<p>Esta página é apenas para condutores. <a href="dashboard.html">Voltar ao dashboard</a></p>';
+      document.getElementById('nome-user').textContent = user.full_name;
+      return;
+    }
+
+    document.getElementById('nome-user').textContent = user.full_name;
+    document.getElementById('valid_from').value = new Date().toISOString().slice(0,10);
+    if (user.role === 'ADMIN') {
+      document.querySelector('nav').innerHTML += ' | <a href="admin.html">Administração</a>';
+    }
+
+    initMapa();
+  }
+
+  init();
+</script>
+
+</body>
+</html>

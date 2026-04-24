@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Boleia.pt — Detalhe da Viagem</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+
+<h1><i class="bi bi-car-front-fill" aria-hidden="true"></i> Boleia.pt</h1>
+<p class="user-bar">Olá, <b id="nome-user">...</b> &nbsp;|&nbsp; <a href="perfil.html"><i class="bi bi-person"></i> Perfil</a> &nbsp;<a href="#" onclick="sair(event)"><i class="bi bi-box-arrow-right"></i> Sair</a></p>
+<nav>
+  <a href="dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a>
+  <a href="pesquisa.html"><i class="bi bi-search"></i> Pesquisar</a>
+  <a href="publicar.html" id="nav-publicar"><i class="bi bi-car-front-fill"></i> Oferecer Boleia</a>
+  <a href="reservas.html"><i class="bi bi-ticket-perforated"></i> Reservas</a>
+  <a href="perfil.html"><i class="bi bi-person-circle"></i> Perfil</a>
+</nav>
+
+<hr>
+
+<div id="conteudo"><p>A carregar...</p></div>
+<div id="mapa" style="height:350px;border:1px solid #ccc;margin-top:12px;display:none"></div>
+
+<hr>
+<a href="pesquisa.html" class="back-link"><i class="bi bi-arrow-left"></i> Voltar aos resultados</a>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="utils.js"></script>
+<script>
+  let viagem   = null;
+  let mapaObj  = null;
+  let marcadores = {};
+  let userId   = null;
+
+  async function sair(e) {
+    e.preventDefault();
+    await fetch('../backend/auth/logout.php', { method: 'POST' });
+    window.location.href = 'login.html';
+  }
+
+  async function init() {
+    const me = await fetch('../backend/auth/me.php');
+    if (!me.ok) { window.location.href = 'login.html'; return; }
+    const { user } = await me.json();
+    userId = user.id;
+    document.getElementById('nome-user').textContent = user.full_name;
+
+    if (user.role === 'ADMIN') {
+      document.querySelector('nav').innerHTML += ' | <a href="admin.html">Administração</a>';
+    }
+    if (user.role === 'PASSENGER') {
+      document.getElementById('nav-publicar').style.display = 'none';
+    }
+
+    const raw = sessionStorage.getItem('viagem_atual');
+    if (!raw) {
+      document.getElementById('conteudo').innerHTML = '<p>Nenhuma viagem selecionada. <a href="pesquisa.html">Pesquisar</a></p>';
+      return;
+    }
+    viagem = JSON.parse(raw);
+
+    const stops  = typeof viagem.stops === 'string' ? JSON.parse(viagem.stops) : (viagem.stops || []);
+    const origem  = stops[0]?.address || '—';
+    const destino = stops[stops.length - 1]?.address || '—';
+    const livres  = viagem.total_seats - viagem.seats_taken;
+    const rating  = viagem.avg_rating ? Number(viagem.avg_rating).toFixed(1) : '—';
+    const preco   = Number(viagem.price_per_seat);
+    const eSouOCondutor = viagem.driver_id === userId;
+
+    document.getElementById('conteudo').innerHTML = `
+      <h2>${esc(origem)} → ${esc(destino)}</h2>
+
+      <h3>Detalhes da viagem</h3>
+      <table border="1" cellpadding="8">
+        <tr><td><b>Data</b></td><td>${fmt(viagem.date)}</td></tr>
+        <tr><td><b>Hora de partida</b></td><td>${viagem.depart_time?.slice(0,5)}</td></tr>
+        <tr><td><b>Lugares disponíveis</b></td><td>${livres} de ${viagem.total_seats}</td></tr>
+        <tr><td><b>Preço por pessoa</b></td><td>${preco.toFixed(2)} €</td></tr>
+        ${viagem.notes ? `<tr><td><b>Notas do condutor</b></td><td>${esc(viagem.notes)}</td></tr>` : ''}
+      </table>
+
+      <h3>Condutor</h3>
+      <table border="1" cellpadding="8">
+        <tr><td><b>Nome</b></td><td>${esc(viagem.driver_name)}</td></tr>
+        <tr><td><b>Avaliação</b></td><td>${rating === '—' ? '—' : rating + ' ★'} (${viagem.total_trips || 0} viagens)</td></tr>
+        ${viagem.car_make ? `<tr><td><b>Veículo</b></td><td>${esc(viagem.car_make)} ${esc(viagem.car_model || '')} ${viagem.car_year || ''}</td></tr>` : ''}
+      </table>
+
+      <h3>Paragens</h3>
+      <ol>${stops.map(s => `<li>${esc(s.label || s.address)}</li>`).join('')}</ol>
+
+      <hr>
+
+      <div id="zona-reserva"></div>
+      <p id="msg-reserva" style="display:none"></p>`;
+
+    const zona = document.getElementById('zona-reserva');
+
+    if (eSouOCondutor) {
+      zona.innerHTML = '<p><i>És o condutor desta viagem — não podes reservar o teu próprio trajeto.</i></p>';
+    } else if (livres === 0) {
+      zona.innerHTML = '<p><b>Sem lugares disponíveis.</b></p>';
+    } else {
+      const opcoesParagens = stops.map(s =>
+        `<option value="${s.id}">${esc(s.label || s.address)}</option>`
+      ).join('');
+
+      zona.innerHTML = `
+        <h3>Reservar lugar</h3>
+        <p><small>ℹ️ A reserva fica <b>pendente</b> até o condutor confirmar. Receberás confirmação no separador <a href="reservas.html">As minhas reservas</a>.</small></p>
+
+        <form onsubmit="reservar(event)">
+          <label>Nº de lugares:<br>
+            <select id="num-lugares" onchange="atualizarTotal()">
+              ${Array.from({length: Math.min(livres, 4)}, (_, i) =>
+                `<option value="${i + 1}">${i + 1}</option>`).join('')}
+            </select>
+          </label><br><br>
+
+          <label>Paragem de embarque:<br>
+            <select id="pickup" onchange="atualizarTotal(); destacarParagens()">
+              ${opcoesParagens}
+            </select>
+          </label><br><br>
+
+          <label>Paragem de desembarque:<br>
+            <select id="dropoff" onchange="atualizarTotal(); destacarParagens()">
+              ${opcoesParagens}
+            </select>
+          </label><br><br>
+
+          <label>Mensagem ao condutor (opcional):<br>
+            <textarea id="mensagem" rows="3" cols="40" placeholder="Ex: Vou com uma mala grande..."></textarea>
+          </label><br><br>
+
+          <table border="0" cellpadding="4">
+            <tr><td>Preço por lugar:</td><td>${preco.toFixed(2)} €</td></tr>
+            <tr><td>Taxa de serviço (10%):</td><td id="taxa">—</td></tr>
+            <tr><td><b>Total:</b></td><td><b id="total">—</b></td></tr>
+          </table><br>
+
+          <button type="submit" id="btn-reservar"><i class="bi bi-check-circle-fill"></i> Confirmar Reserva</button>
+        </form>`;
+
+      document.getElementById('dropoff').selectedIndex = stops.length - 1;
+      atualizarTotal();
+    }
+
+    const stopsComCoords = stops.filter(s => s.lat && s.lng && !(s.lat == 0 && s.lng == 0));
+    if (stopsComCoords.length > 0) {
+      initMapa(stops);
+    }
+  }
+
+  function atualizarTotal() {
+    const pickup  = document.getElementById('pickup');
+    const dropoff = document.getElementById('dropoff');
+    const n       = parseInt(document.getElementById('num-lugares').value);
+    const preco   = Number(viagem.price_per_seat);
+
+    const btn = document.getElementById('btn-reservar');
+    if (pickup && dropoff && pickup.value === dropoff.value) {
+      document.getElementById('taxa').textContent  = '—';
+      document.getElementById('total').textContent = '⚠️ Embarque e desembarque iguais';
+      if (btn) btn.disabled = true;
+      return;
+    }
+    if (btn) btn.disabled = false;
+
+    const taxa  = (preco * n * 0.10).toFixed(2);
+    const total = (preco * n * 1.10).toFixed(2);
+    document.getElementById('taxa').textContent  = taxa + ' €';
+    document.getElementById('total').textContent = total + ' €';
+  }
+
+  function initMapa(stops) {
+    document.getElementById('mapa').style.display = 'block';
+    mapaObj = L.map('mapa').setView([39.5, -8.0], 6);
+    L.tileLayer('https:
+      attribution: '© OpenStreetMap'
+    }).addTo(mapaObj);
+
+    const pontos = [];
+    stops.forEach((s, i) => {
+      if (!s.lat || !s.lng || (s.lat == 0 && s.lng == 0)) return;
+      const isOrigem  = i === 0;
+      const isDestino = i === stops.length - 1;
+      const cor  = isOrigem ? '🟢' : isDestino ? '🔴' : '🔵';
+      const tipo = isOrigem ? 'Origem' : isDestino ? 'Destino' : 'Paragem intermédia';
+
+      marcadores[s.id] = L.marker([s.lat, s.lng], {
+        icon: L.divIcon({ html: cor, iconSize: [20, 20], className: '' })
+      }).addTo(mapaObj).bindPopup(`<b>${tipo}</b><br>${esc(s.label || s.address)}`);
+
+      pontos.push([s.lat, s.lng]);
+    });
+
+    if (pontos.length >= 2) {
+      L.polyline(pontos, { color: 'blue', weight: 3 }).addTo(mapaObj);
+      mapaObj.fitBounds(pontos, { padding: [40, 40] });
+    } else if (pontos.length === 1) {
+      mapaObj.setView(pontos[0], 13);
+    }
+  }
+
+  function destacarParagens() {
+    const pickupId  = document.getElementById('pickup')?.value;
+    const dropoffId = document.getElementById('dropoff')?.value;
+    if (pickupId  && marcadores[pickupId])  marcadores[pickupId].openPopup();
+    if (dropoffId && marcadores[dropoffId]) marcadores[dropoffId].openPopup();
+  }
+
+  async function reservar(e) {
+    e.preventDefault();
+    const msg       = document.getElementById('msg-reserva');
+    const pickupId  = document.getElementById('pickup').value;
+    const dropoffId = document.getElementById('dropoff').value;
+    msg.style.display = 'none';
+
+    if (pickupId === dropoffId) {
+      msg.style.color   = 'red';
+      msg.textContent   = 'A paragem de embarque e desembarque não podem ser iguais.';
+      msg.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('btn-reservar');
+    btn.disabled  = true;
+    btn.textContent = 'A processar...';
+
+    const res  = await fetch('../backend/bookings/index.php', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        occurrence_id:   viagem.occurrence_id,
+        pickup_stop_id:  pickupId,
+        dropoff_stop_id: dropoffId,
+        seats_booked:    parseInt(document.getElementById('num-lugares').value),
+        note_to_driver:  document.getElementById('mensagem').value.trim() || null
+      })
+    });
+    const data = await res.json();
+
+    msg.style.color   = data.success ? 'green' : 'red';
+    msg.style.display = 'block';
+
+    if (data.success) {
+      const total = Number(data.total_amount).toFixed(2);
+      msg.innerHTML = `✔ Reserva criada! Total: <b>${total} €</b><br>
+        <small>Aguarda confirmação do condutor. Podes ver o estado em <a href="reservas.html">As minhas reservas</a>.</small>`;
+      btn.style.display = 'none';
+      setTimeout(() => window.location.href = 'reservas.html', 3000);
+    } else {
+      msg.textContent  = data.message;
+      btn.disabled     = false;
+      btn.textContent  = 'Confirmar Reserva';
+    }
+  }
+
+  function fmt(d) { if (!d) return '—'; const [y, m, dd] = d.split('-'); return `${dd}/${m}/${y}`; }
+  function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  init();
+</script>
+
+</body>
+</html>
