@@ -24,7 +24,7 @@ $sql = "SELECT ro.id AS occurrence_id, ro.date, ro.seats_taken,
                (SELECT JSON_ARRAYAGG(JSON_OBJECT(
                    'id', rs.id, 'stop_order', rs.stop_order, 'label', rs.label,
                    'address', rs.address, 'lat', rs.lat, 'lng', rs.lng
-               ) ORDER BY rs.stop_order ASC) FROM route_stops rs WHERE rs.route_id = r.id) AS stops
+               )) FROM (SELECT * FROM route_stops WHERE route_id = r.id ORDER BY stop_order ASC) rs) AS stops
         FROM route_occurrences ro
         INNER JOIN routes r ON ro.route_id = r.id
         INNER JOIN driver_profiles dp ON r.driver_id = dp.id

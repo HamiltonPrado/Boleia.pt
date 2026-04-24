@@ -18,8 +18,7 @@ if ($method === 'GET') {
                 (SELECT JSON_ARRAYAGG(JSON_OBJECT(
                     'id', rs.id, 'stop_order', rs.stop_order, 'label', rs.label,
                     'address', rs.address, 'lat', rs.lat, 'lng', rs.lng, 'is_optional', rs.is_optional
-                ) ORDER BY rs.stop_order)
-                FROM route_stops rs WHERE rs.route_id = r.id) AS stops
+                )) FROM (SELECT * FROM route_stops WHERE route_id = r.id ORDER BY stop_order ASC) rs) AS stops
          FROM routes r
          INNER JOIN driver_profiles dp ON r.driver_id = dp.id
          INNER JOIN users u ON dp.user_id = u.id

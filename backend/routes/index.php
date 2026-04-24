@@ -14,7 +14,7 @@ if ($method === 'GET') {
                 (SELECT JSON_ARRAYAGG(JSON_OBJECT(
                     'id', rs.id, 'stop_order', rs.stop_order, 'label', rs.label,
                     'address', rs.address, 'lat', rs.lat, 'lng', rs.lng, 'is_optional', rs.is_optional
-                ) ORDER BY rs.stop_order ASC) FROM route_stops rs WHERE rs.route_id = r.id) AS stops,
+                )) FROM (SELECT * FROM route_stops WHERE route_id = r.id ORDER BY stop_order ASC) rs) AS stops,
                 (SELECT MIN(ro.date) FROM route_occurrences ro
                  WHERE ro.route_id = r.id AND ro.date >= CURDATE() AND ro.status = 'SCHEDULED') AS next_occurrence
          FROM routes r
