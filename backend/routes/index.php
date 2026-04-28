@@ -9,21 +9,41 @@ $payload = require_auth();
 $db      = db();
 
 if ($method === 'GET') {
-    $st = $db->prepare(
-        "SELECT r.*,
-                (SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                    'id', rs.id, 'stop_order', rs.stop_order, 'label', rs.label,
-                    'address', rs.address, 'lat', rs.lat, 'lng', rs.lng, 'is_optional', rs.is_optional
-                )) FROM (SELECT * FROM route_stops WHERE route_id = r.id ORDER BY stop_order ASC) rs) AS stops,
-                (SELECT MIN(ro.date) FROM route_occurrences ro
-                 WHERE ro.route_id = r.id AND ro.date >= CURDATE() AND ro.status = 'SCHEDULED') AS next_occurrence
-         FROM routes r
-         INNER JOIN driver_profiles dp ON r.driver_id = dp.id
-         WHERE dp.user_id = ?
-         ORDER BY r.created_at DESC"
-    );
-    $st->execute([$payload['userId']]);
-    json_out(['success' => true, 'routes' => $st->fetchAll()]);
+    try {
+        $st = $db->prepare(
+            "SELECT r.*,
+                    (SELECT MIN(ro.date) FROM route_occurrences ro
+                     WHERE ro.route_id = r.id AND ro.date >= CURDATE() AND ro.status = 'SCHEDULED') AS next_occurrence
+             FROM routes r
+             INNER JOIN driver_profiles dp ON r.driver_id = dp.id
+             WHERE dp.user_id = ?
+             ORDER BY r.created_at DESC"
+        );
+        $st->execute([$payload['userId']]);
+        $routes = $st->fetchAll();
+
+        if (!empty($routes)) {
+            $ids = array_column($routes, 'id');
+            $ph  = implode(',', array_fill(0, count($ids), '?'));
+            $ss  = $db->prepare(
+                "SELECT id, route_id, stop_order, label, address, lat, lng, is_optional
+                 FROM route_stops WHERE route_id IN ($ph) ORDER BY route_id, stop_order ASC"
+            );
+            $ss->execute($ids);
+            $stopsByRoute = [];
+            foreach ($ss->fetchAll() as $s) {
+                $stopsByRoute[$s['route_id']][] = $s;
+            }
+            foreach ($routes as &$r) {
+                $r['stops'] = json_encode($stopsByRoute[$r['id']] ?? []);
+            }
+            unset($r);
+        }
+
+        json_out(['success' => true, 'routes' => $routes]);
+    } catch (Exception $e) {
+        json_out(['success' => false, 'message' => 'Erro ao carregar rotas: ' . $e->getMessage()], 500);
+    }
 }
 
 $b = body();

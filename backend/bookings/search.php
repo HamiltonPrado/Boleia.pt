@@ -20,11 +20,7 @@ $db = db();
 $sql = "SELECT ro.id AS occurrence_id, ro.date, ro.seats_taken,
                r.id AS route_id, r.total_seats, r.price_per_seat, r.depart_time, r.notes,
                u.id AS driver_id, u.full_name AS driver_name, u.avatar_url,
-               dp.tier, dp.avg_rating, dp.total_trips, dp.car_make, dp.car_model, dp.car_year,
-               (SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                   'id', rs.id, 'stop_order', rs.stop_order, 'label', rs.label,
-                   'address', rs.address, 'lat', rs.lat, 'lng', rs.lng
-               )) FROM (SELECT * FROM route_stops WHERE route_id = r.id ORDER BY stop_order ASC) rs) AS stops
+               dp.tier, dp.avg_rating, dp.total_trips, dp.car_make, dp.car_model, dp.car_year
         FROM route_occurrences ro
         INNER JOIN routes r ON ro.route_id = r.id
         INNER JOIN driver_profiles dp ON r.driver_id = dp.id
@@ -52,8 +48,30 @@ if ($destLat && $destLng) {
 
 $sql .= " ORDER BY r.depart_time ASC";
 
-$st = $db->prepare($sql);
-$st->execute($params);
-$results = $st->fetchAll();
+try {
+    $st = $db->prepare($sql);
+    $st->execute($params);
+    $results = $st->fetchAll();
 
-json_out(['success' => true, 'results' => $results]);
+    if (!empty($results)) {
+        $routeIds = array_unique(array_column($results, 'route_id'));
+        $ph = implode(',', array_fill(0, count($routeIds), '?'));
+        $ss = $db->prepare(
+            "SELECT id, route_id, stop_order, label, address, lat, lng
+             FROM route_stops WHERE route_id IN ($ph) ORDER BY route_id, stop_order ASC"
+        );
+        $ss->execute($routeIds);
+        $stopsByRoute = [];
+        foreach ($ss->fetchAll() as $s) {
+            $stopsByRoute[$s['route_id']][] = $s;
+        }
+        foreach ($results as &$row) {
+            $row['stops'] = json_encode($stopsByRoute[$row['route_id']] ?? []);
+        }
+        unset($row);
+    }
+
+    json_out(['success' => true, 'results' => $results]);
+} catch (Exception $e) {
+    json_out(['success' => false, 'message' => 'Erro na pesquisa: ' . $e->getMessage()], 500);
+}
