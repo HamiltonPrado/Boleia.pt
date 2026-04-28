@@ -81,4 +81,20 @@ $routeId = transaction(function($db) use ($dp, $total_seats, $price_per_seat, $d
     return $routeId;
 });
 
+$daysOfWeek = $recurrence['days_of_week'] ?? [];
+$validFrom  = $valid_from  ? new DateTime($valid_from)  : null;
+$validUntil = $valid_until ? new DateTime($valid_until) : null;
+
+for ($i = 0; $i <= 30; $i++) {
+    $date   = new DateTime("+$i days");
+    $dayNum = (int)$date->format('w');
+    if (!in_array($dayNum, $daysOfWeek)) continue;
+    if ($validFrom  && $date < $validFrom)  continue;
+    if ($validUntil && $date > $validUntil) break;
+
+    $db->prepare(
+        "INSERT IGNORE INTO route_occurrences (id, route_id, date, status, seats_taken) VALUES (?, ?, ?, 'SCHEDULED', 0)"
+    )->execute([uuid(), $routeId, $date->format('Y-m-d')]);
+}
+
 json_out(['success' => true, 'message' => 'Rota criada com sucesso', 'routeId' => $routeId], 201);
