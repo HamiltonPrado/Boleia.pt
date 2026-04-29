@@ -86,7 +86,7 @@ Boleia/
 
 **1. Clonar o repositório**
 ```bash
-git clone https://github.com/yxsin720/boleia.pt.git
+git clone https://github.com/HamiltonPrado/Boleia.pt.git
 ```
 Colocar a pasta dentro de `htdocs/` do MAMP.
 
