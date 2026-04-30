@@ -12,7 +12,7 @@ $db      = db();
 if ($method === 'GET') {
     $st = $db->prepare(
         "SELECT b.*, ro.date, r.depart_time,
-                u.id AS driver_user_id, u.full_name AS driver_name, u.avatar_url AS driver_avatar,
+                u.id AS driver_user_id, u.full_name AS driver_name, u.avatar_url AS driver_avatar_url,
                 dp.tier, dp.avg_rating,
                 ps.address AS pickup_address, ds.address AS dropoff_address
          FROM bookings b

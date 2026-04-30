@@ -44,8 +44,10 @@ if (!move_uploaded_file($file['tmp_name'], $destPath))
 $avatarUrl = 'uploads/avatars/' . $filename;
 $stmt = $db->prepare('UPDATE users SET avatar_url = ? WHERE id = ?');
 $stmt->execute([$avatarUrl, $uid]);
-$affected = $stmt->rowCount();
 
-error_log("[avatar.php] uid=$uid affected=$affected url=$avatarUrl");
+if ($stmt->rowCount() === 0) {
+    @unlink($destPath);
+    json_out(['success' => false, 'message' => 'Sessão inválida. Faz login novamente.'], 401);
+}
 
-json_out(['success' => true, 'avatar_url' => $avatarUrl, '_debug' => ['uid' => $uid, 'affected' => $affected]]);
+json_out(['success' => true, 'avatar_url' => $avatarUrl]);
