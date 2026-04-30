@@ -3,6 +3,7 @@ require_once __DIR__ . '/db.php';
 
 function session_init(): void {
     if (session_status() === PHP_SESSION_NONE) {
+        session_set_cookie_params(['samesite' => 'Lax', 'path' => '/']);
         session_start();
     }
 }

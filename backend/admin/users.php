@@ -19,7 +19,7 @@ try {
         $total = $db->prepare("SELECT COUNT(*) FROM users WHERE role != 'ADMIN' AND (full_name LIKE ? OR email LIKE ?)");
         $total->execute([$like, $like]);
         $st    = $db->prepare(
-            "SELECT u.id, u.email, u.full_name, u.phone, u.role, u.status, u.created_at,
+            "SELECT u.id, u.email, u.full_name, u.phone, u.role, u.status, u.created_at, u.avatar_url,
                     dp.tier, dp.verification_status, dp.avg_rating, dp.total_trips
              FROM users u LEFT JOIN driver_profiles dp ON u.id = dp.user_id
              WHERE u.role != 'ADMIN' AND (u.full_name LIKE ? OR u.email LIKE ?)
@@ -29,7 +29,7 @@ try {
     } else {
         $total = $db->query("SELECT COUNT(*) FROM users WHERE role != 'ADMIN'");
         $st    = $db->prepare(
-            "SELECT u.id, u.email, u.full_name, u.phone, u.role, u.status, u.created_at,
+            "SELECT u.id, u.email, u.full_name, u.phone, u.role, u.status, u.created_at, u.avatar_url,
                     dp.tier, dp.verification_status, dp.avg_rating, dp.total_trips
              FROM users u LEFT JOIN driver_profiles dp ON u.id = dp.user_id
              WHERE u.role != 'ADMIN' ORDER BY u.created_at DESC LIMIT $limit OFFSET $offset"

@@ -33,12 +33,11 @@ $payload   = require_auth();
 $b         = body();
 $full_name = trim($b['full_name'] ?? '');
 $phone     = trim($b['phone'] ?? '');
-$avatar    = $b['avatar_url'] ?? null;
 
-if (!$full_name || !$phone) json_out(['success' => false, 'message' => 'Nome e telefone são obrigatórios'], 400);
+if (!$full_name) json_out(['success' => false, 'message' => 'Nome é obrigatório'], 400);
 
-$db->prepare("UPDATE users SET full_name = ?, phone = ?, avatar_url = ? WHERE id = ?")
-   ->execute([$full_name, $phone, $avatar, $payload['userId']]);
+$db->prepare("UPDATE users SET full_name = ?, phone = ? WHERE id = ?")
+   ->execute([$full_name, $phone, $payload['userId']]);
 
 $st = $db->prepare('SELECT id, email, full_name, phone, avatar_url, role, status FROM users WHERE id = ?');
 $st->execute([$payload['userId']]);
