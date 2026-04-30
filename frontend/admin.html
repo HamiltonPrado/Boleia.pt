@@ -6,53 +6,356 @@
   <title>Boleia.pt — Administração</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <style>
+    
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    .admin-sidebar { position: sticky; top: 110px; display: flex; flex-direction: column; gap: 12px; }
+
+    
+    .admin-nav-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 16px 16px;
+      box-shadow: var(--shadow);
+    }
+    .admin-sidebar-title {
+      font-size: 1rem; font-weight: 700; color: var(--dark);
+      margin: 0 0 14px; padding: 0 4px;
+      font-family: 'Plus Jakarta Sans','Inter',sans-serif;
+    }
+    .admin-nav {
+      display: flex; flex-direction: column; gap: 2px;
+      position: static; margin: 0; padding: 0;
+      border: none; background: none;
+      backdrop-filter: none; -webkit-backdrop-filter: none;
+      font-size: inherit;
+    }
+    .admin-nav-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 9px 11px; border-radius: 10px;
+      font-size: 0.875rem; font-weight: 500; color: var(--muted);
+      text-decoration: none; transition: background 150ms, color 150ms; cursor: pointer;
+    }
+    .admin-nav-item:hover { background: var(--bg); color: var(--dark); text-decoration: none; }
+    .admin-nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+    .admin-nav-item > i { font-size: 1rem; flex-shrink: 0; width: 18px; text-align: center; }
+    .admin-nav-badge {
+      margin-left: auto; background: var(--danger); color: #fff;
+      border-radius: 99px; font-size: 0.65rem; font-weight: 700;
+      padding: 2px 7px; min-width: 20px; text-align: center; display: none;
+    }
+    .admin-sidebar-back {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; border-radius: 10px;
+      font-size: 0.82rem; color: var(--muted); text-decoration: none;
+      border: 1px solid var(--border); background: var(--surface);
+      transition: background 150ms, color 150ms;
+    }
+    .admin-sidebar-back:hover { background: var(--bg); color: var(--dark); text-decoration: none; }
+
+    
+    .admin-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .admin-stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 26px 28px;
+      box-shadow: var(--shadow);
+    }
+    .asc-label {
+      font-size: 0.875rem; font-weight: 600; color: var(--success);
+      margin-bottom: 10px; display: block;
+    }
+    .asc-value {
+      font-size: 2.6rem; font-weight: 800;
+      font-family: 'Plus Jakarta Sans','Inter',sans-serif;
+      line-height: 1; color: var(--success);
+    }
+    .asc-value-dark { color: var(--dark); }
+
+    
+    .recent-users-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+    .recent-users-card h3 {
+      font-size: 1rem; font-weight: 700; color: var(--dark);
+      padding: 18px 20px 14px; margin: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .ru-table { width: 100%; border-collapse: collapse; }
+    .ru-table th {
+      text-align: left; padding: 10px 20px;
+      font-size: 0.75rem; font-weight: 600; color: var(--muted);
+      border-bottom: 1px solid var(--border); background: var(--bg);
+    }
+    .ru-table td { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; }
+    .ru-table tr:last-child td { border-bottom: none; }
+    .ru-table tbody tr:hover { background: var(--bg); }
+    .ru-id { color: var(--muted); font-weight: 600; }
+    .ru-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: #EEF2FF; color: #4F46E5;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700; overflow: hidden; flex-shrink: 0;
+    }
+    .ru-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .btn-ver {
+      padding: 5px 14px; border-radius: 99px;
+      font-size: 0.8rem; font-weight: 500;
+      background: var(--surface); color: var(--text);
+      border: 1.5px solid var(--border); cursor: pointer; font-family: inherit;
+      transition: border-color 150ms, color 150ms;
+    }
+    .btn-ver:hover { border-color: var(--primary); color: var(--primary); background: var(--surface); }
+    .btn-banir {
+      padding: 5px 14px; border-radius: 99px;
+      font-size: 0.8rem; font-weight: 600;
+      background: var(--danger-light); color: var(--danger);
+      border: none; cursor: pointer; font-family: inherit;
+      transition: background 150ms;
+    }
+    .btn-banir:hover { background: #FECACA; }
+
+    
+    .admin-sec-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 32px; }
+    .admin-sec-stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .ass-icon {
+      width: 36px; height: 36px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;
+    }
+    .ass-success { background: var(--success-light); color: var(--success); }
+    .ass-primary { background: var(--primary-light); color: var(--primary); }
+    .ass-indigo  { background: #EEF2FF; color: #4F46E5; }
+    .ass-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px; }
+    .ass-value { font-size: 1.3rem; font-weight: 700; color: var(--dark); font-family: 'Plus Jakarta Sans','Inter',sans-serif; line-height: 1; }
+
+    
+    .section-title {
+      font-size: 0.85rem; font-weight: 700; color: var(--dark);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+    .user-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .user-row:last-child { border-bottom: none; }
+    .user-avatar-initials {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--primary-light); color: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+    }
+    .user-row-name { font-weight: 600; font-size: 0.875rem; color: var(--dark); }
+    .user-row-meta { font-size: 0.78rem; color: var(--muted); }
+    .user-row-badge { margin-left: auto; flex-shrink: 0; }
+
+    
+    .act-bar-wrap { display: flex; align-items: center; gap: 10px; }
+    .act-bar-track {
+      flex: 1; height: 8px; background: var(--border);
+      border-radius: 99px; overflow: hidden;
+    }
+    .act-bar-fill {
+      height: 100%; background: var(--primary);
+      border-radius: 99px; transition: width 600ms cubic-bezier(.4,0,.2,1);
+    }
+    .act-bar-num { font-size: 0.82rem; font-weight: 600; color: var(--dark); min-width: 24px; text-align: right; }
+
+    
+    .admin-content h2 { margin-bottom: 20px; }
+    .admin-search-bar {
+      margin-bottom: 20px;
+    }
+    .admin-search-label {
+      font-size: 0.68rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.09em;
+      margin-bottom: 8px; display: block;
+    }
+    .admin-search-row {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    }
+    .admin-search-row input {
+      flex: 1; min-width: 200px; max-width: none;
+      border-radius: 10px; padding: 10px 14px;
+    }
+    .admin-search-row button { border-radius: 99px; white-space: nowrap; }
+
+    
+    .action-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.875rem; font-weight: 500; text-decoration: none;
+      transition: opacity 150ms;
+    }
+    .action-link:hover { opacity: 0.75; text-decoration: none; }
+    .action-danger { color: var(--danger); }
+    .action-ok     { color: var(--success); }
+
+    
+    .user-av {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #EEF2FF; color: #4F46E5;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700; flex-shrink: 0;
+      font-family: 'Plus Jakarta Sans','Inter',sans-serif;
+    }
+
+    
+    .pag-wrap { margin-top: 14px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .pag-item {
+      padding: 4px 10px; border: 1px solid var(--border); border-radius: 7px;
+      font-size: 0.8rem; color: var(--muted); text-decoration: none; cursor: pointer;
+      transition: background 150ms, color 150ms;
+    }
+    .pag-item:hover { background: var(--bg); color: var(--dark); text-decoration: none; }
+    .pag-item.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600; }
+
+    @media (max-width: 900px) {
+      .admin-layout { grid-template-columns: 1fr; }
+      .admin-sidebar { position: static; }
+      .admin-nav { flex-direction: row; flex-wrap: wrap; }
+      .admin-nav-item { font-size: 0.8rem; padding: 7px 10px; }
+      .admin-hero-stats, .admin-sec-stats { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      .admin-hero-stats { grid-template-columns: 1fr; }
+      .admin-sec-stats  { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
 </head>
 <body>
 
-<h1><i class="bi bi-car-front-fill" aria-hidden="true"></i> Boleia.pt — Administração</h1>
-<p><a href="dashboard.html">Dashboard</a> | <a href="#" onclick="sair(event)">Sair</a></p>
-
-<hr>
-
-<p>
-  <b>Secção:</b>
-  <a href="#" onclick="mostrarAba(event,'aba-stats')">Estatísticas</a> |
-  <a href="#" onclick="mostrarAba(event,'aba-utilizadores')">Utilizadores</a> |
-  <a href="#" onclick="mostrarAba(event,'aba-condutores')">Condutores Pendentes</a> |
-  <a href="#" onclick="mostrarAba(event,'aba-documentos')">Documentos</a> |
-  <a href="#" onclick="mostrarAba(event,'aba-atividade')">Atividade Recente</a>
-</p>
-
-<hr>
-<div id="aba-stats">
-  <h2>Estatísticas Gerais</h2>
-  <div id="stats-conteudo"><p>A carregar...</p></div>
-</div>
-<div id="aba-utilizadores" style="display:none">
-  <h2>Utilizadores</h2>
-  <form onsubmit="pesquisarUtilizadores(event)">
-    <label>Pesquisar: <input type="text" id="search-user" size="25" placeholder="Nome ou email" /></label>
-    <button type="submit">Pesquisar</button>
-    <button type="button" onclick="carregarUtilizadores(1)">Ver todos</button>
-  </form><br>
-  <div id="utilizadores-conteudo"><p>A carregar...</p></div>
-  <div id="paginacao-utilizadores"></div>
-</div>
-<div id="aba-condutores" style="display:none">
-  <h2>Condutores Pendentes de Aprovação</h2>
-  <div id="condutores-conteudo"><p>A carregar...</p></div>
-</div>
-<div id="aba-documentos" style="display:none">
-  <h2>Documentos para Revisão</h2>
-  <div id="documentos-conteudo"><p>A carregar...</p></div>
-</div>
-<div id="aba-atividade" style="display:none">
-  <h2>Atividade Recente</h2>
-  <div id="atividade-conteudo"><p>A carregar...</p></div>
+<div class="navbar-wrapper">
+  <header class="navbar">
+    <a class="brand" href="admin.html">
+      <div class="brand-icon"><i class="bi bi-car-front-fill"></i></div>
+      Boleia.pt
+    </a>
+    <div class="nav-links">
+      <span class="nav-item nav-active" style="cursor:default"><i class="bi bi-shield-lock-fill"></i> Administração</span>
+    </div>
+    <div class="user-actions">
+      <a href="#" onclick="sair(event)" class="nav-item"><i class="bi bi-box-arrow-right"></i> Sair</a>
+    </div>
+  </header>
 </div>
 
-<hr>
-<a href="dashboard.html">← Voltar ao dashboard</a>
+<div class="admin-layout">
+
+  
+  <div class="admin-sidebar">
+    <div class="admin-nav-card">
+      <h3 class="admin-sidebar-title">Administração</h3>
+      <nav class="admin-nav">
+        <a href="#" onclick="mostrarAba(event,'aba-stats')" class="admin-nav-item active" id="nav-aba-stats">
+          <i class="bi bi-grid-fill"></i> Resumo
+        </a>
+        <a href="#" onclick="mostrarAba(event,'aba-utilizadores')" class="admin-nav-item" id="nav-aba-utilizadores">
+          <i class="bi bi-people-fill"></i> Utilizadores
+        </a>
+        <a href="#" onclick="mostrarAba(event,'aba-condutores')" class="admin-nav-item" id="nav-aba-condutores">
+          <i class="bi bi-person-check-fill"></i> Condutores
+          <span class="admin-nav-badge" id="badge-condutores"></span>
+        </a>
+        <a href="#" onclick="mostrarAba(event,'aba-documentos')" class="admin-nav-item" id="nav-aba-documentos">
+          <i class="bi bi-file-earmark-check-fill"></i> Documentos
+          <span class="admin-nav-badge" id="badge-documentos"></span>
+        </a>
+        <a href="#" onclick="mostrarAba(event,'aba-atividade')" class="admin-nav-item" id="nav-aba-atividade">
+          <i class="bi bi-activity"></i> Atividade
+        </a>
+      </nav>
+    </div>
+  </div>
+
+  
+  <div class="admin-content">
+
+    
+    <div id="aba-stats">
+      <div id="stats-conteudo" class="admin-stats-grid">
+        <div class="admin-stat-card">
+          <span class="asc-label">Total Utilizadores</span>
+          <div class="asc-value"><div class="skeleton" style="width:80px;height:42px"></div></div>
+        </div>
+        <div class="admin-stat-card">
+          <span class="asc-label">Total Reservas</span>
+          <div class="asc-value"><div class="skeleton" style="width:60px;height:42px"></div></div>
+        </div>
+        <div class="admin-stat-card">
+          <span class="asc-label">Verificações Pendentes</span>
+          <div class="asc-value asc-value-dark"><div class="skeleton" style="width:40px;height:42px"></div></div>
+        </div>
+      </div>
+
+      <div class="recent-users-card">
+        <h3>Últimos Utilizadores Registados</h3>
+        <div id="recent-users-list"><table class="ru-table"><tbody>
+          <tr><td colspan="5"><div class="skeleton" style="height:18px;margin:6px 0"></div></td></tr>
+          <tr><td colspan="5"><div class="skeleton" style="height:18px;margin:6px 0"></div></td></tr>
+          <tr><td colspan="5"><div class="skeleton" style="height:18px;margin:6px 0"></div></td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+
+    
+    <div id="aba-utilizadores" style="display:none">
+      <h2><i class="bi bi-people-fill"></i> Utilizadores</h2>
+      <div class="admin-search-bar">
+        <span class="admin-search-label">Pesquisar</span>
+        <form onsubmit="pesquisarUtilizadores(event)" class="admin-search-row">
+          <input type="text" id="search-user" placeholder="Nome ou email" />
+          <button type="submit"><i class="bi bi-search"></i> Pesquisar</button>
+          <button type="button" onclick="carregarUtilizadores(1)"><i class="bi bi-list-ul"></i> Ver todos</button>
+        </form>
+      </div>
+      <div id="utilizadores-conteudo"><p>A carregar...</p></div>
+      <div class="pag-wrap" id="paginacao-utilizadores"></div>
+    </div>
+
+    
+    <div id="aba-condutores" style="display:none">
+      <div id="condutores-conteudo"><p>A carregar...</p></div>
+    </div>
+
+    
+    <div id="aba-documentos" style="display:none">
+      <div id="documentos-conteudo"><p>A carregar...</p></div>
+    </div>
+
+    
+    <div id="aba-atividade" style="display:none">
+      <div id="atividade-conteudo"><p>A carregar...</p></div>
+    </div>
+
+  </div>
+</div>
 
 <script src="utils.js"></script>
 <script>
@@ -66,6 +369,9 @@
     e.preventDefault();
     const abas = ['aba-stats','aba-utilizadores','aba-condutores','aba-documentos','aba-atividade'];
     abas.forEach(a => document.getElementById(a).style.display = (a === id) ? '' : 'none');
+    document.querySelectorAll('.admin-nav-item').forEach(el => el.classList.remove('active'));
+    const navItem = document.getElementById(`nav-${id}`);
+    if (navItem) navItem.classList.add('active');
     if (id === 'aba-utilizadores') carregarUtilizadores(1);
     if (id === 'aba-condutores')   carregarCondutores();
     if (id === 'aba-documentos')   carregarDocumentos();
@@ -77,27 +383,91 @@
     if (!me.ok) { window.location.href = 'login.html'; return; }
     const { user } = await me.json();
     if (user.role !== 'ADMIN') { alert('Acesso negado.'); window.location.href = 'dashboard.html'; return; }
-    await carregarStats();
+    await Promise.all([carregarStats(), carregarRecentUsers()]);
   }
 
   async function carregarStats() {
     const res  = await fetch('../backend/admin/stats.php');
     const data = await res.json();
     const div  = document.getElementById('stats-conteudo');
-    if (!data.success) { div.innerHTML = `<p style="color:red">${esc(data.message)}</p>`; return; }
+    if (!data.success) {
+      div.innerHTML = `<div class="alert alert-danger"><i class="bi bi-x-circle-fill"></i> ${esc(data.message)}</div>`;
+      return;
+    }
     const s = data.stats;
-    div.innerHTML = `<table border="1" cellpadding="10">
-      <tr>
-        <td><b>Total de utilizadores</b><br>${s.total_users || 0}</td>
-        <td><b>Total de condutores</b><br>${s.total_drivers || 0}</td>
-        <td><b>Condutores verificados</b><br>${s.verified_drivers || 0}</td>
-      </tr>
-      <tr>
-        <td><b>Total de reservas</b><br>${s.total_bookings || 0}</td>
-        <td><b>Reservas completadas</b><br>${s.completed_bookings || 0}</td>
-        <td><b>Verificações pendentes</b><br>${s.pending_verification || 0}</td>
-      </tr>
-    </table>`;
+
+    const pendingTotal = (s.pending_verification || 0);
+    if (pendingTotal > 0) {
+      ['badge-condutores','badge-documentos'].forEach(id => {
+        const el = document.getElementById(id);
+        el.textContent = pendingTotal;
+        el.style.display = 'inline-block';
+      });
+    }
+
+    div.innerHTML = `
+      <div class="admin-stat-card">
+        <span class="asc-label">Total Utilizadores</span>
+        <div class="asc-value">${Number(s.total_users || 0).toLocaleString('pt-PT')}</div>
+      </div>
+      <div class="admin-stat-card">
+        <span class="asc-label">Total Reservas</span>
+        <div class="asc-value">${Number(s.total_bookings || 0).toLocaleString('pt-PT')}</div>
+      </div>
+      <div class="admin-stat-card">
+        <span class="asc-label">Verificações Pendentes</span>
+        <div class="asc-value asc-value-dark">${s.pending_verification || 0}</div>
+      </div>`;
+    div.className = 'admin-stats-grid';
+  }
+
+  async function carregarRecentUsers() {
+    try {
+      const res   = await fetch('../backend/admin/users.php?page=1&limit=5');
+      const data  = await res.json();
+      const users = data.users || [];
+      if (users.length === 0) return;
+
+      const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      function fmtLong(d) {
+        if (!d) return '—';
+        const [y, m, dd] = d.split('-');
+        return `${parseInt(dd)} ${MESES[parseInt(m)-1]} ${y}`;
+      }
+
+      document.getElementById('recent-users-list').innerHTML = `
+        <table class="ru-table">
+          <thead><tr>
+            <th>ID</th><th>Nome</th><th>Email</th><th>Data Registo</th><th>Ação</th>
+          </tr></thead>
+          <tbody>
+          ${users.map((u, i) => {
+            const initials = (u.full_name || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+            const avatarHtml = u.avatar_url
+              ? `<img src="../${esc(u.avatar_url)}" alt="${esc(u.full_name)}">`
+              : initials;
+            const isSuspended = u.status === 'SUSPENDED';
+            return `<tr>
+              <td class="ru-id">#${1000 + i + 1}</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="ru-avatar">${avatarHtml}</div>
+                  <span style="font-weight:600">${esc(u.full_name)}</span>
+                </div>
+              </td>
+              <td style="color:var(--muted)">${esc(u.email)}</td>
+              <td>${fmtLong(u.created_at?.slice(0,10))}</td>
+              <td>
+                ${isSuspended
+                  ? `<button class="btn-ver" onclick="atualizarEstadoUser(event,'${u.id}','ACTIVE')">Reativar</button>`
+                  : `<button class="btn-banir" onclick="atualizarEstadoUser(event,'${u.id}','SUSPENDED')">Banir</button>`
+                }
+              </td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table>`;
+    } catch {}
   }
 
   let paginaAtual = 1;
@@ -111,40 +481,50 @@
     const div  = document.getElementById('utilizadores-conteudo');
     const users = data.users || [];
 
-    if (users.length === 0) { div.innerHTML = '<p>Sem utilizadores encontrados.</p>'; return; }
+    if (users.length === 0) {
+      div.innerHTML = '<div class="empty-state"><i class="bi bi-people"></i><p>Sem utilizadores encontrados.</p></div>';
+      return;
+    }
 
     const roleLabel  = { PASSENGER: 'Passageiro', DRIVER: 'Condutor', BOTH: 'Condutor/Passageiro', ADMIN: 'Admin' };
     const statusLabel = { ACTIVE: 'Ativo', SUSPENDED: 'Suspenso', PENDING: 'Pendente', VERIFIED: 'Verificado' };
+    const statusBadge = { ACTIVE: 'badge-active', SUSPENDED: 'badge-cancelled', PENDING: 'badge-pending', VERIFIED: 'badge-confirmed' };
 
-    div.innerHTML = `<table border="1" cellpadding="8"><thead><tr>
-        <th>Nome</th><th>Email</th><th>Tipo</th><th>Estado</th><th>Registado em</th><th>Ações</th>
+    div.innerHTML = `<div class="recent-users-card"><table class="ru-table"><thead><tr>
+        <th>ID</th><th>Nome</th><th>Tipo</th><th>Estado</th><th>Data Registo</th><th>Ação</th>
       </tr></thead><tbody>
-      ${users.map(u => `<tr>
-        <td>${esc(u.full_name)}</td>
-        <td>${esc(u.email)}</td>
-        <td>${roleLabel[u.role] || u.role}</td>
-        <td>${statusLabel[u.status] || u.status}</td>
-        <td>${fmt(u.created_at?.slice(0,10))}</td>
+      ${users.map((u, i) => {
+        const initials = (u.full_name || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+        const avatarHtml = u.avatar_url ? `<img src="../${esc(u.avatar_url)}" alt="">` : initials;
+        return `<tr>
+        <td class="ru-id">#${(pagina - 1) * 20 + i + 1001}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="ru-avatar">${avatarHtml}</div>
+            <div>
+              <div style="font-weight:600;color:var(--dark)">${esc(u.full_name)}</div>
+            </div>
+          </div>
+        </td>
+        <td style="color:var(--muted)">${roleLabel[u.role] || u.role}</td>
+        <td><span class="badge ${statusBadge[u.status] || 'badge-pending'}">${statusLabel[u.status] || u.status}</span></td>
+        <td>${fmtLong(u.created_at?.slice(0,10))}</td>
         <td>
           ${u.status !== 'SUSPENDED'
-            ? `<a href="#" onclick="atualizarEstadoUser(event,'${u.id}','SUSPENDED')" class="btn-sm btn-danger"><i class="bi bi-slash-circle"></i> Suspender</a>`
-            : `<a href="#" onclick="atualizarEstadoUser(event,'${u.id}','ACTIVE')" class="btn-sm btn-ok"><i class="bi bi-check-circle"></i> Reativar</a>`
+            ? `<button class="btn-banir" onclick="atualizarEstadoUser(event,'${u.id}','SUSPENDED')">Banir</button>`
+            : `<button class="btn-ver" onclick="atualizarEstadoUser(event,'${u.id}','ACTIVE')">Reativar</button>`
           }
         </td>
-      </tr>`).join('')}
-      </tbody></table>`;
+      </tr>`;}).join('')}
+      </tbody></table></div>`;
 
     const total = data.pagination?.total || data.total || users.length;
     const totalPags = Math.ceil(total / 20);
     const pDiv = document.getElementById('paginacao-utilizadores');
     if (totalPags <= 1) { pDiv.innerHTML = ''; return; }
-    let html = 'Página: ';
-    for (let i = 1; i <= totalPags; i++) {
-      html += i === pagina
-        ? `<b>${i}</b> `
-        : `<a href="#" onclick="carregarUtilizadores(${i}); return false">${i}</a> `;
-    }
-    pDiv.innerHTML = html;
+    pDiv.innerHTML = Array.from({length: totalPags}, (_, i) => i + 1).map(i =>
+      `<a href="#" onclick="carregarUtilizadores(${i});return false" class="pag-item ${i === pagina ? 'active' : ''}">${i}</a>`
+    ).join('');
   }
 
   function pesquisarUtilizadores(e) {
@@ -154,16 +534,19 @@
 
   async function atualizarEstadoUser(e, userId, status) {
     e.preventDefault();
-    const acao = status === 'SUSPENDED' ? 'suspender' : 'reativar';
-    if (!confirm(`Tens a certeza que queres ${acao} este utilizador?`)) return;
+    if (!await confirmar(status === 'SUSPENDED' ? 'O utilizador ficará suspenso e não poderá aceder à plataforma.' : 'O utilizador voltará a ter acesso à plataforma.', { titulo: status === 'SUSPENDED' ? 'Suspender utilizador?' : 'Reativar utilizador?', okLabel: status === 'SUSPENDED' ? 'Suspender' : 'Reativar', okClass: status === 'SUSPENDED' ? 'btn-danger' : 'btn-ok' })) return;
     const res  = await fetch(`../backend/admin/update_user_status.php?id=${userId}`, {
       method: 'PATCH',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ status })
     });
     const data = await res.json();
-    if (data.success) await carregarUtilizadores(paginaAtual);
-    else alert(data.message);
+    if (data.success) {
+      toast(status === 'SUSPENDED' ? 'Utilizador suspenso.' : 'Utilizador reativado.', status === 'SUSPENDED' ? 'warning' : 'success');
+      await carregarUtilizadores(paginaAtual);
+    } else {
+      toast(data.message || 'Erro.', 'danger');
+    }
   }
 
   async function carregarCondutores() {
@@ -172,22 +555,35 @@
     const div  = document.getElementById('condutores-conteudo');
     const drivers = data.drivers || [];
 
-    if (drivers.length === 0) { div.innerHTML = '<p>Sem condutores pendentes de aprovação.</p>'; return; }
+    if (drivers.length === 0) {
+      div.innerHTML = '<div class="empty-state"><i class="bi bi-person-check"></i><p>Sem condutores pendentes de aprovação.</p></div>';
+      return;
+    }
 
-    div.innerHTML = `<table border="1" cellpadding="8"><thead><tr>
-        <th>Nome</th><th>Email</th><th>Telemóvel</th><th>Registado em</th><th>Ações</th>
+    div.innerHTML = `<div class="recent-users-card"><h3>Condutores Pendentes</h3><table class="ru-table"><thead><tr>
+        <th>Condutor</th><th>Telemóvel</th><th>Submetido em</th><th>Ações</th>
       </tr></thead><tbody>
-      ${drivers.map(d => `<tr>
-        <td>${esc(d.full_name)}</td>
-        <td>${esc(d.email)}</td>
-        <td>${esc(d.phone || '—')}</td>
-        <td>${fmt(d.uploaded_at?.slice(0,10))}</td>
-        <td style="white-space:nowrap">
-          <a href="#" onclick="rever(event,'driver','${d.id}','APPROVED')" class="btn-sm btn-ok"><i class="bi bi-check-circle-fill"></i> Aprovar</a>
-          <a href="#" onclick="rever(event,'driver','${d.id}','REJECTED')" class="btn-sm btn-danger"><i class="bi bi-x-circle-fill"></i> Rejeitar</a>
+      ${drivers.map(d => {
+        const initials = (d.full_name || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+        const avatarHtml = d.avatar_url ? `<img src="../${esc(d.avatar_url)}" alt="">` : initials;
+        return `<tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="ru-avatar">${avatarHtml}</div>
+            <div>
+              <div style="font-weight:600;color:var(--dark)">${esc(d.full_name)}</div>
+              <div style="font-size:0.78rem;color:var(--muted)">${esc(d.email)}</div>
+            </div>
+          </div>
         </td>
-      </tr>`).join('')}
-      </tbody></table>`;
+        <td style="color:var(--muted)">${esc(d.phone || '—')}</td>
+        <td>${fmtLong(d.uploaded_at?.slice(0,10))}</td>
+        <td style="white-space:nowrap">
+          <a href="#" onclick="rever(event,'driver','${d.id}','APPROVED')" class="action-link action-ok" style="margin-right:14px"><i class="bi bi-check-circle-fill"></i> Aprovar</a>
+          <a href="#" onclick="rever(event,'driver','${d.id}','REJECTED')" class="action-link action-danger"><i class="bi bi-x-circle-fill"></i> Rejeitar</a>
+        </td>
+      </tr>`;}).join('')}
+      </tbody></table></div>`;
   }
 
   async function carregarDocumentos() {
@@ -196,38 +592,52 @@
     const div  = document.getElementById('documentos-conteudo');
     const docs = data.documents || [];
 
-    if (docs.length === 0) { div.innerHTML = '<p>Sem documentos pendentes de revisão.</p>'; return; }
+    if (docs.length === 0) {
+      div.innerHTML = '<div class="empty-state"><i class="bi bi-file-earmark-check"></i><p>Sem documentos pendentes de revisão.</p></div>';
+      return;
+    }
 
-    const tipoLabel = {
-      LICENSE:   'Carta de Condução',
-      ID:        'Cartão de Cidadão',
-      INSURANCE: 'Seguro'
-    };
+    const tipoLabel = { LICENSE: 'Carta de Condução', ID: 'Cartão de Cidadão', INSURANCE: 'Seguro' };
 
-    div.innerHTML = `<table border="1" cellpadding="8"><thead><tr>
-        <th>Utilizador</th><th>Email</th><th>Tipo</th><th>Enviado em</th><th>URL</th><th>Ações</th>
+    div.innerHTML = `<div class="recent-users-card"><h3>Documentos para Revisão</h3><table class="ru-table"><thead><tr>
+        <th>Utilizador</th><th>Tipo</th><th>Enviado em</th><th>Ficheiro</th><th>Ações</th>
       </tr></thead><tbody>
-      ${docs.map(d => `<tr>
-        <td>${esc(d.full_name || '—')}</td>
-        <td>${esc(d.email || '—')}</td>
-        <td>${tipoLabel[d.type] || d.type}</td>
-        <td>${fmt(d.uploaded_at?.slice(0,10))}</td>
-        <td>${d.file_url ? `<a href="${esc(d.file_url)}" target="_blank">Ver</a>` : '—'}</td>
-        <td style="white-space:nowrap">
-          <a href="#" onclick="rever(event,'document','${d.id}','APPROVED')" class="btn-sm btn-ok"><i class="bi bi-check-circle-fill"></i> Aprovar</a>
-          <a href="#" onclick="rever(event,'document','${d.id}','REJECTED')" class="btn-sm btn-danger"><i class="bi bi-x-circle-fill"></i> Rejeitar</a>
+      ${docs.map(d => {
+        const initials = (d.full_name || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+        const avatarHtml = d.avatar_url ? `<img src="../${esc(d.avatar_url)}" alt="">` : initials;
+        const ext = (d.file_url || '').split('.').pop().toLowerCase();
+        const fileHtml = d.file_url
+          ? ext === 'pdf'
+            ? `<a href="../${esc(d.file_url)}" target="_blank" class="action-link" style="color:var(--danger)"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</a>`
+            : `<a href="../${esc(d.file_url)}" target="_blank"><img src="../${esc(d.file_url)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border)"></a>`
+          : '—';
+        return `<tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="ru-avatar">${avatarHtml}</div>
+            <div>
+              <div style="font-weight:600;color:var(--dark)">${esc(d.full_name || '—')}</div>
+              <div style="font-size:0.78rem;color:var(--muted)">${esc(d.email || '—')}</div>
+            </div>
+          </div>
         </td>
-      </tr>`).join('')}
-      </tbody></table>`;
+        <td><span class="badge badge-pending">${tipoLabel[d.type] || d.type}</span></td>
+        <td>${fmtLong(d.uploaded_at?.slice(0,10))}</td>
+        <td>${fileHtml}</td>
+        <td style="white-space:nowrap">
+          <a href="#" onclick="rever(event,'document','${d.id}','APPROVED')" class="action-link action-ok" style="margin-right:14px"><i class="bi bi-check-circle-fill"></i> Aprovar</a>
+          <a href="#" onclick="rever(event,'document','${d.id}','REJECTED')" class="action-link action-danger"><i class="bi bi-x-circle-fill"></i> Rejeitar</a>
+        </td>
+      </tr>`;}).join('')}
+      </tbody></table></div>`;
   }
 
   async function rever(e, tipo, id, status) {
     e.preventDefault();
     const endpoint = tipo === 'driver'
-      ? `admin/review_driver.php?id=${id}`
-      : `admin/review_document.php?id=${id}`;
-    const acao = status === 'APPROVED' ? 'aprovar' : 'rejeitar';
-    if (!confirm(`Tens a certeza que queres ${acao}?`)) return;
+      ? `../backend/admin/review_driver.php?id=${id}`
+      : `../backend/admin/review_document.php?id=${id}`;
+    if (!await confirmar(status === 'APPROVED' ? 'O condutor ficará aprovado e poderá aceitar passageiros.' : 'O pedido será rejeitado.', { titulo: status === 'APPROVED' ? 'Aprovar?' : 'Rejeitar?', okLabel: status === 'APPROVED' ? 'Aprovar' : 'Rejeitar', okClass: status === 'APPROVED' ? 'btn-ok' : 'btn-danger' })) return;
     const res  = await fetch(endpoint, {
       method: 'PATCH',
       headers: {'Content-Type':'application/json'},
@@ -235,10 +645,11 @@
     });
     const data = await res.json();
     if (data.success) {
+      toast(status === 'APPROVED' ? 'Aprovado com sucesso.' : 'Rejeitado.', status === 'APPROVED' ? 'success' : 'warning');
       if (tipo === 'driver') await carregarCondutores();
       else await carregarDocumentos();
     } else {
-      alert(data.message);
+      toast(data.message || 'Erro.', 'danger');
     }
   }
 
@@ -248,24 +659,39 @@
     const div  = document.getElementById('atividade-conteudo');
     const rows = data.rows || [];
 
-    if (rows.length === 0) { div.innerHTML = '<p>Sem atividade recente.</p>'; return; }
+    if (rows.length === 0) {
+      div.innerHTML = '<div class="empty-state"><i class="bi bi-activity"></i><p>Sem atividade recente.</p></div>';
+      return;
+    }
 
-    div.innerHTML = `<p><small>Reservas confirmadas/completadas nos últimos 28 dias.</small></p>
-      <table border="1" cellpadding="8"><thead><tr>
-        <th>Dia</th><th>Nº de viagens</th>
-      </tr></thead><tbody>
-      ${rows.map(r => `<tr>
-        <td>${fmt(r.day)}</td>
-        <td>${r.trips}</td>
-      </tr>`).join('')}
-      </tbody></table>`;
+    const maxTrips = Math.max(...rows.map(r => Number(r.trips)), 1);
+
+    div.innerHTML = `
+      <div class="recent-users-card">
+        <h3>Atividade — últimos 28 dias</h3>
+        <table class="ru-table"><thead><tr>
+          <th>Dia</th><th style="width:60%">Viagens</th><th>Total</th>
+        </tr></thead><tbody>
+        ${rows.map(r => {
+          const pct = Math.round(Number(r.trips) / maxTrips * 100);
+          return `<tr>
+            <td style="white-space:nowrap;font-weight:500;color:var(--dark)">${fmtLong(r.day)}</td>
+            <td>
+              <div class="act-bar-wrap">
+                <div class="act-bar-track">
+                  <div class="act-bar-fill" style="width:${pct}%"></div>
+                </div>
+              </div>
+            </td>
+            <td class="act-bar-num">${r.trips}</td>
+          </tr>`;
+        }).join('')}
+        </tbody></table>
+      </div>`;
   }
 
-  function fmtDatetime(dt) {
-    if (!dt) return '—';
-    const d = new Date(dt);
-    return d.toLocaleString('pt-PT');
-  }
+  const _MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  function fmtLong(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${parseInt(dd)} ${_MESES[parseInt(m)-1]} ${y}`; }
   function fmt(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; }
   function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
