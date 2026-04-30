@@ -6,44 +6,128 @@
   <title>Boleia.pt — As minhas reservas</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <style>
+    .reserva-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+      transition: box-shadow 150ms;
+    }
+    .reserva-card:hover { box-shadow: var(--shadow-md); }
+    .reserva-avatar {
+      width: 54px; height: 54px; border-radius: 50%;
+      background: #F1F5F9; color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.35rem; flex-shrink: 0; overflow: hidden;
+      border: 2px solid var(--border);
+    }
+    .reserva-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .reserva-info { flex: 1; min-width: 0; }
+    .reserva-route {
+      font-weight: 700; font-size: 1rem; color: var(--dark);
+      margin: 5px 0 3px;
+    }
+    .reserva-meta { font-size: 0.82rem; color: var(--muted); }
+    .reserva-right {
+      display: flex; flex-direction: column;
+      align-items: flex-end; gap: 8px; flex-shrink: 0;
+    }
+    .reserva-price {
+      font-size: 1.35rem; font-weight: 800;
+      color: var(--success);
+      font-family: 'Plus Jakarta Sans','Inter',sans-serif;
+      line-height: 1;
+    }
+    .reserva-cancel {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.82rem; font-weight: 500; color: var(--danger);
+      text-decoration: none; cursor: pointer; background: none; border: none;
+      font-family: inherit; padding: 0;
+    }
+    .reserva-cancel:hover { color: #B91C1C; text-decoration: underline; }
+    .reserva-avaliar {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.82rem; font-weight: 500; color: var(--warning);
+      text-decoration: none; cursor: pointer; background: none; border: none;
+      font-family: inherit; padding: 0;
+    }
+    .reserva-avaliar:hover { color: #B45309; text-decoration: underline; }
+
+    .badge-aguardar { background: #FEF9C3; color: #854D0E; }
+
+    .section-sep {
+      font-size: 0.72rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      display: flex; align-items: center; gap: 10px;
+      margin: 24px 0 14px;
+    }
+    .section-sep::after { content:''; flex:1; height:1px; background:var(--border); }
+
+    .reserva-card.passada { opacity: 0.75; }
+
+    @media (max-width: 560px) {
+      .reserva-card { flex-wrap: wrap; gap: 12px; }
+      .reserva-right { flex-direction: row; align-items: center; width: 100%; justify-content: space-between; }
+    }
+  </style>
 </head>
 <body>
 
-<h1><i class="bi bi-car-front-fill" aria-hidden="true"></i> Boleia.pt</h1>
-<p class="user-bar">Olá, <b id="nome-user">...</b> &nbsp;|&nbsp; <a href="perfil.html"><i class="bi bi-person"></i> Perfil</a> &nbsp;<a href="#" onclick="sair(event)"><i class="bi bi-box-arrow-right"></i> Sair</a></p>
-<nav>
-  <a href="dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a>
-  <a href="pesquisa.html"><i class="bi bi-search"></i> Pesquisar</a>
-  <a href="publicar.html" id="nav-publicar"><i class="bi bi-car-front-fill"></i> Oferecer Boleia</a>
-  <a href="perfil.html"><i class="bi bi-person-circle"></i> Perfil</a>
-</nav>
-
-<hr>
-
-<h2>As minhas reservas</h2>
-<div id="conteudo"><p>A carregar...</p></div>
-<div id="modal-review" style="display:none;border:2px solid black;padding:16px;position:fixed;top:20%;left:50%;transform:translateX(-50%);background:white;z-index:100;width:360px">
-  <p style="text-align:right"><a href="#" onclick="fecharReview(event)"><i class="bi bi-x-lg"></i> Fechar</a></p>
-  <h3>Avaliar condutor</h3>
-  <input type="hidden" id="review-booking-id" />
-  <label>Avaliação:<br>
-    <select id="review-rating">
-      <option value="5">★★★★★ (5 — Excelente)</option>
-      <option value="4">★★★★☆ (4 — Bom)</option>
-      <option value="3">★★★☆☆ (3 — Razoável)</option>
-      <option value="2">★★☆☆☆ (2 — Mau)</option>
-      <option value="1">★☆☆☆☆ (1 — Muito mau)</option>
-    </select>
-  </label><br><br>
-  <label>Comentário (opcional):<br>
-    <textarea id="review-comment" rows="3" cols="35"></textarea>
-  </label><br><br>
-  <button onclick="submeterReview()"><i class="bi bi-star-fill"></i> Enviar avaliação</button>
-  <p id="msg-review" style="display:none"></p>
+<div class="navbar-wrapper">
+  <header class="navbar">
+    <a class="brand" href="dashboard.html" id="nav-brand">
+      <div class="brand-icon"><i class="bi bi-car-front-fill"></i></div>
+      Boleia.pt
+    </a>
+    <div class="nav-links" id="nav-main">
+      <a href="dashboard.html" class="nav-item" id="nav-dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      <a href="pesquisa.html" class="nav-item" id="nav-pesquisar"><i class="bi bi-search"></i> Pesquisar</a>
+      <a href="publicar.html" class="nav-item" id="nav-publicar"><i class="bi bi-car-front-fill"></i> Oferecer Boleia</a>
+      <a href="reservas.html" class="nav-item nav-active"><i class="bi bi-ticket-perforated"></i> Reservas</a>
+    </div>
+    <div class="user-actions">
+      <span class="user-greeting">Olá, <b id="nome-user">...</b></span>
+      <a href="perfil.html" class="nav-item"><i class="bi bi-person-circle"></i> Perfil</a>
+      <a href="#" onclick="sair(event)" class="nav-item"><i class="bi bi-box-arrow-right"></i> Sair</a>
+    </div>
+  </header>
 </div>
 
-<hr>
-<a href="dashboard.html" class="back-link"><i class="bi bi-arrow-left"></i> Voltar ao dashboard</a>
+<h2><i class="bi bi-ticket-perforated-fill"></i> As minhas reservas</h2>
+<div id="conteudo"><p>A carregar...</p></div>
+
+<a href="dashboard.html" id="back-link" class="back-link" style="margin-top:28px;display:inline-flex"><i class="bi bi-arrow-left"></i> Voltar ao dashboard</a>
+
+<div id="modal-review" style="display:none" class="modal-overlay" onclick="fecharReviewOverlay(event)">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="review-title">
+    <div class="modal-header">
+      <h3 id="review-title"><i class="bi bi-star-fill" style="color:var(--warning)"></i> Avaliar condutor</h3>
+      <button class="modal-close" onclick="fecharReview()" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <input type="hidden" id="review-booking-id" />
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Avaliação</label>
+      <select id="review-rating">
+        <option value="5">★★★★★ (5 — Excelente)</option>
+        <option value="4">★★★★☆ (4 — Bom)</option>
+        <option value="3">★★★☆☆ (3 — Razoável)</option>
+        <option value="2">★★☆☆☆ (2 — Mau)</option>
+        <option value="1">★☆☆☆☆ (1 — Muito mau)</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label>Comentário (opcional)</label>
+      <textarea id="review-comment" rows="3" style="resize:vertical"></textarea>
+    </div>
+    <button onclick="submeterReview()" style="width:100%"><i class="bi bi-star-fill"></i> Enviar avaliação</button>
+  </div>
+</div>
 
 <script src="utils.js"></script>
 <script>
@@ -58,9 +142,14 @@
     if (!me.ok) { window.location.href = 'login.html'; return; }
     const { user } = await me.json();
     document.getElementById('nome-user').textContent = user.full_name;
+    if (user.role === 'DRIVER' || user.role === 'BOTH') ajustarNavCondutor(user.role);
 
     if (user.role === 'ADMIN') {
-      document.querySelector('nav').innerHTML += ' | <a href="admin.html">Administração</a>';
+      const nav = document.getElementById('nav-main');
+      const a = document.createElement('a');
+      a.href = 'admin.html'; a.className = 'nav-item';
+      a.innerHTML = '<i class="bi bi-shield-lock"></i> Administração';
+      nav.appendChild(a);
     }
     if (user.role === 'PASSENGER') {
       document.getElementById('nav-publicar').style.display = 'none';
@@ -72,132 +161,172 @@
   async function carregarReservas() {
     const div = document.getElementById('conteudo');
     let bookings = [], reviewableIds = new Set();
+
     try {
-      const bRes = await fetch('../backend/bookings/index.php');
+      const bRes  = await fetch('../backend/bookings/index.php');
       const bData = await bRes.json();
       bookings = bData.bookings || [];
-    } catch (err) {
-      div.innerHTML = '<p style="color:red">Erro ao carregar reservas. Verifica a consola do browser.</p>';
-      console.error('bookings/index.php error:', err);
+    } catch {
+      div.innerHTML = '<div class="alert alert-danger"><i class="bi bi-x-circle-fill"></i> Erro ao carregar reservas.</div>';
       return;
     }
+
     try {
-      const revRes = await fetch('../backend/reviews/reviewable.php');
+      const revRes  = await fetch('../backend/reviews/reviewable.php');
       const revData = await revRes.json();
       reviewableIds = new Set((revData.bookings || []).filter(b => !b.review_id).map(b => b.id));
-    } catch {  }
+    } catch { }
 
-    const todas  = bookings;
-    const hoje   = new Date().toISOString().slice(0,10);
-    const proximas = todas.filter(b =>
+    const hoje    = new Date().toISOString().slice(0,10);
+    const proximas = bookings.filter(b =>
       b.date >= hoje && !['CANCELLED_PASSENGER','CANCELLED_DRIVER','COMPLETED'].includes(b.status)
     );
-    const passadas = todas.filter(b =>
+    const passadas = bookings.filter(b =>
       b.date < hoje || ['CANCELLED_PASSENGER','CANCELLED_DRIVER','COMPLETED'].includes(b.status)
     );
 
-    const tabelaProximas = proximas.length === 0
-      ? '<p>Sem reservas próximas. <a href="pesquisa.html">Pesquisar viagens</a></p>'
-      : `<table border="1" cellpadding="8"><thead><tr>
-          <th>Origem</th><th>Destino</th><th>Data</th><th>Hora</th>
-          <th>Condutor</th><th>Lugares</th><th>Total pago</th><th>Estado</th><th>Ação</th>
-        </tr></thead><tbody>
-        ${proximas.map(b => `<tr>
-          <td>${esc(b.pickup_address)}</td>
-          <td>${esc(b.dropoff_address)}</td>
-          <td>${fmt(b.date)}</td>
-          <td>${b.depart_time?.slice(0,5)}</td>
-          <td>${esc(b.driver_name)}</td>
-          <td>${b.seats_booked}</td>
-          <td>${Number(b.total_amount).toFixed(2)} €</td>
-          <td>${fmtStatus(b.status)}</td>
-          <td><a href="#" onclick="cancelar(event,'${b.id}')" class="btn-sm btn-danger"><i class="bi bi-x-circle"></i> Cancelar</a></td>
-        </tr>`).join('')}
-        </tbody></table>`;
+    if (bookings.length === 0) {
+      div.innerHTML = `<div class="empty-state">
+        <i class="bi bi-ticket-perforated"></i>
+        <p>Ainda não tens nenhuma reserva.</p>
+        <a href="pesquisa.html" class="btn-sm btn-info"><i class="bi bi-search"></i> Pesquisar viagens</a>
+      </div>`;
+      return;
+    }
 
-    const tabelaPassadas = passadas.length === 0
-      ? '<p>Sem viagens passadas.</p>'
-      : `<table border="1" cellpadding="8"><thead><tr>
-          <th>Origem</th><th>Destino</th><th>Data</th><th>Condutor</th>
-          <th>Total pago</th><th>Estado</th><th>Avaliação</th>
-        </tr></thead><tbody>
-        ${passadas.map(b => {
-          const podeAvaliar = reviewableIds.has(b.id);
-          return `<tr>
-            <td>${esc(b.pickup_address)}</td>
-            <td>${esc(b.dropoff_address)}</td>
-            <td>${fmt(b.date)}</td>
-            <td>${esc(b.driver_name)}</td>
-            <td>${Number(b.total_amount).toFixed(2)} €</td>
-            <td>${fmtStatus(b.status)}</td>
-            <td>${podeAvaliar
-              ? `<a href="#" onclick="abrirReview(event,'${b.id}')" class="btn-sm btn-info"><i class="bi bi-star-fill"></i> Avaliar</a>`
-              : '—'
-            }</td>
-          </tr>`;
-        }).join('')}
-        </tbody></table>`;
+    const cardsProximas = proximas.length === 0
+      ? `<div class="empty-state" style="padding:20px 0"><i class="bi bi-calendar-x"></i><p>Sem reservas próximas. <a href="pesquisa.html">Pesquisar viagens</a></p></div>`
+      : proximas.map(b => renderCard(b, false, reviewableIds)).join('');
 
-    document.getElementById('conteudo').innerHTML =
-      `<h3>Próximas viagens</h3>${tabelaProximas}<br><h3>Viagens passadas</h3>${tabelaPassadas}`;
+    const cardsPassadas = passadas.length === 0
+      ? `<div class="empty-state" style="padding:20px 0"><i class="bi bi-clock-history"></i><p>Sem viagens passadas.</p></div>`
+      : passadas.map(b => renderCard(b, true, reviewableIds)).join('');
+
+    div.innerHTML = `
+      <div class="section-sep">Próximas viagens</div>
+      ${cardsProximas}
+      <div class="section-sep" style="margin-top:32px">Viagens passadas</div>
+      ${cardsPassadas}`;
+  }
+
+  function renderCard(b, passada, reviewableIds) {
+    const cidade = addr => (addr || '—').split(',')[0].trim();
+    const origem  = cidade(b.pickup_address);
+    const destino = cidade(b.dropoff_address);
+    const preco   = Math.round(Number(b.total_amount)) + '€';
+
+    const avatarHtml = b.driver_avatar_url
+      ? `<img src="../${esc(b.driver_avatar_url)}" alt="${esc(b.driver_name)}">`
+      : `<i class="bi bi-person-fill"></i>`;
+
+    const STATUS_BADGE = {
+      PENDING:             'badge-aguardar',
+      CONFIRMED:           'badge-confirmed',
+      COMPLETED:           'badge-completed',
+      CANCELLED_PASSENGER: 'badge-cancelled',
+      CANCELLED_DRIVER:    'badge-cancelled',
+      NO_SHOW:             'badge-cancelled',
+    };
+    const STATUS_LABEL = {
+      PENDING:             'Aguardar Confirmação',
+      CONFIRMED:           'Confirmada',
+      COMPLETED:           'Concluída',
+      CANCELLED_PASSENGER: 'Cancelada por mim',
+      CANCELLED_DRIVER:    'Cancelada pelo condutor',
+      NO_SHOW:             'Não compareceu',
+    };
+
+    const podeCancelar = !passada && ['PENDING','CONFIRMED'].includes(b.status);
+    const podeAvaliar  = passada && reviewableIds.has(b.id);
+
+    const acaoHtml = podeCancelar
+      ? `<button class="reserva-cancel" onclick="cancelar(event,'${b.id}')"><i class="bi bi-x-circle-fill"></i> Cancelar</button>`
+      : podeAvaliar
+        ? `<button class="reserva-avaliar" onclick="abrirReview(event,'${b.id}')"><i class="bi bi-star-fill"></i> Avaliar</button>`
+        : '';
+
+    return `<div class="reserva-card${passada ? ' passada' : ''}">
+      <div class="reserva-avatar">${avatarHtml}</div>
+      <div class="reserva-info">
+        <span class="badge ${STATUS_BADGE[b.status] || 'badge-archived'}">${STATUS_LABEL[b.status] || b.status}</span>
+        <div class="reserva-route">${esc(origem)} a ${esc(destino)}</div>
+        <div class="reserva-meta">${fmtDatetime(b.date, b.depart_time)}</div>
+      </div>
+      <div class="reserva-right">
+        <span class="reserva-price">${preco}</span>
+        ${acaoHtml}
+      </div>
+    </div>`;
   }
 
   async function cancelar(e, id) {
     e.preventDefault();
-    if (!confirm('Tens a certeza que queres cancelar esta reserva?')) return;
+    if (!await confirmar('Tens a certeza que queres cancelar esta reserva?', { titulo: 'Cancelar reserva?', okLabel: 'Cancelar reserva' })) return;
     const res  = await fetch(`../backend/bookings/cancel.php?id=${id}`, { method: 'DELETE' });
     const data = await res.json();
-    if (data.success) { alert('Reserva cancelada.'); await carregarReservas(); }
-    else alert(data.message);
-  }
-
-  function abrirReview(e, bookingId) {
-    e.preventDefault();
-    document.getElementById('review-booking-id').value = bookingId;
-    document.getElementById('review-rating').value     = '5';
-    document.getElementById('review-comment').value    = '';
-    document.getElementById('msg-review').style.display = 'none';
-    document.getElementById('modal-review').style.display = 'block';
-  }
-
-  function fecharReview(e) {
-    e.preventDefault();
-    document.getElementById('modal-review').style.display = 'none';
-  }
-
-  async function submeterReview() {
-    const msg       = document.getElementById('msg-review');
-    const bookingId = document.getElementById('review-booking-id').value;
-    const rating    = parseInt(document.getElementById('review-rating').value);
-    const comment   = document.getElementById('review-comment').value.trim() || null;
-    msg.style.display = 'none';
-
-    const res  = await fetch('../backend/reviews/create.php', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ booking_id: bookingId, rating, comment })
-    });
-    const data = await res.json();
-    msg.style.color   = data.success ? 'green' : 'red';
-    msg.textContent   = data.message;
-    msg.style.display = 'block';
     if (data.success) {
-      setTimeout(async () => {
-        fecharReview({ preventDefault: () => {} });
-        await carregarReservas();
-      }, 1200);
+      toast('Reserva cancelada.', 'warning');
+      await carregarReservas();
+    } else {
+      toast(data.message || 'Erro ao cancelar.', 'danger');
     }
   }
 
-  const STATUS_PT = {
-    PENDING:            'Pendente',
-    CONFIRMED:          'Confirmada',
-    COMPLETED:          'Concluída',
-    CANCELLED_PASSENGER:'Cancelada por mim',
-    CANCELLED_DRIVER:   'Cancelada pelo condutor',
-    NO_SHOW:            'Não compareceu',
-  };
-  function fmtStatus(s) { return STATUS_PT[s] || s; }
+  function abrirReview(e, bookingId) {
+    if (e) e.preventDefault();
+    document.getElementById('review-booking-id').value  = bookingId;
+    document.getElementById('review-rating').value      = '5';
+    document.getElementById('review-comment').value     = '';
+    document.getElementById('modal-review').style.display = 'flex';
+  }
+
+  function fecharReview() {
+    document.getElementById('modal-review').style.display = 'none';
+  }
+
+  function fecharReviewOverlay(e) {
+    if (e.target === document.getElementById('modal-review')) fecharReview();
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharReview(); });
+
+  async function submeterReview() {
+    const bookingId = document.getElementById('review-booking-id').value;
+    const rating    = parseInt(document.getElementById('review-rating').value);
+    const comment   = document.getElementById('review-comment').value.trim() || null;
+
+    const res  = await fetch('../backend/reviews/create.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_id: bookingId, rating, comment })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(data.message || 'Avaliação enviada!', 'success');
+      fecharReview();
+      await carregarReservas();
+    } else {
+      toast(data.message || 'Erro ao enviar avaliação.', 'danger');
+    }
+  }
+
+  function ajustarNavCondutor(role) {
+    document.getElementById('nav-brand').href          = 'dashboard_condutor.html';
+    document.getElementById('nav-dashboard').href      = 'dashboard_condutor.html';
+    document.getElementById('nav-dashboard').innerHTML = '<i class="bi bi-speedometer2"></i> Painel';
+    document.getElementById('back-link').href          = 'dashboard_condutor.html';
+    if (role === 'DRIVER') {
+      document.getElementById('nav-pesquisar').style.display = 'none';
+    }
+  }
+
+  const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  function fmtDatetime(date, time) {
+    if (!date) return '—';
+    const [y, m, d] = date.split('-');
+    const hora = time ? time.slice(0,5) : '';
+    return `${parseInt(d)} ${MESES[parseInt(m)-1]} ${y}${hora ? ' às ' + hora : ''}`;
+  }
   function fmt(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; }
   function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
