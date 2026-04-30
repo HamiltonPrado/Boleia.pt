@@ -9,73 +9,84 @@
 </head>
 <body>
 
-<h1><i class="bi bi-car-front-fill" aria-hidden="true"></i> Boleia.pt</h1>
-<h2>Criar conta</h2>
+<div class="navbar-wrapper">
+  <header class="navbar">
+    <a class="brand" href="index.html">
+      <div class="brand-icon"><i class="bi bi-car-front-fill"></i></div>
+      Boleia.pt
+    </a>
+    <div class="nav-links">
+      <a href="index.html#como-funciona" class="nav-item"><i class="bi bi-question-circle"></i> Como Funciona</a>
+    </div>
+    <div class="user-actions">
+      <a href="login.html" class="nav-item"><i class="bi bi-box-arrow-in-right"></i> Entrar</a>
+    </div>
+  </header>
+</div>
 
-<form onsubmit="registar(event)">
-  <label>Nome completo:<br>
-    <input type="text" id="nome" placeholder="Ex: João Silva" size="30" />
-  </label><br><br>
+<div class="auth-card" style="max-width:480px">
+  <h2>Criar Conta</h2>
+  <p class="auth-subtitle">Junta-te à maior comunidade de boleias.</p>
 
-  <label>Email:<br>
-    <input type="email" id="email" placeholder="exemplo@email.com" size="30" />
-  </label><br><br>
+  <form onsubmit="registar(event)">
+    <div class="auth-name-row">
+      <div class="form-group" style="margin-bottom:0">
+        <label>Nome</label>
+        <input type="text" id="nome" placeholder="João" required />
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>Apelido</label>
+        <input type="text" id="apelido" placeholder="Silva" required />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="exemplo@email.com" autocomplete="email" required />
+    </div>
+    <div class="form-group">
+      <label>Telemóvel</label>
+      <input type="tel" id="telemovel" placeholder="9XX XXX XXX" autocomplete="tel" />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required />
+    </div>
 
-  <label>Telemóvel:<br>
-    <input type="tel" id="telemovel" placeholder="9XX XXX XXX" size="30" />
-  </label><br><br>
+    <div id="erro" class="alert alert-danger" style="display:none;text-align:left"></div>
 
-  <label>Palavra-passe:<br>
-    <input type="password" id="password" placeholder="Mínimo 8 caracteres" size="30" />
-  </label><br><br>
+    <button type="submit" class="btn-submit"><i class="bi bi-person-plus-fill"></i> Criar Conta</button>
+  </form>
 
-  <label>Confirmar palavra-passe:<br>
-    <input type="password" id="confirmar" placeholder="Repete a palavra-passe" size="30" />
-  </label><br><br>
-
-  <fieldset>
-    <legend>Tipo de conta</legend>
-    <label><input type="radio" name="tipo" value="PASSENGER" checked /> Passageiro</label>
-    &nbsp;
-    <label><input type="radio" name="tipo" value="DRIVER" /> Condutor</label>
-    &nbsp;
-    <label><input type="radio" name="tipo" value="BOTH" /> Ambos</label>
-  </fieldset><br>
-
-  <button type="submit"><i class="bi bi-person-plus-fill"></i> Criar conta</button>
-</form>
-
-<p id="erro" style="color:red;display:none"></p>
-
-<br>
-<p>Já tens conta? <a href="login.html">Entra aqui</a></p>
-
-<hr>
-<a href="index.html" class="back-link"><i class="bi bi-arrow-left"></i> Voltar ao início</a>
+  <p class="auth-footer">Já tens conta? <a href="login.html">Entra aqui</a></p>
+</div>
 
 <script src="utils.js"></script>
 <script>
   async function registar(e) {
     e.preventDefault();
-    const full_name = document.getElementById('nome').value.trim();
-    const email     = document.getElementById('email').value.trim();
-    const phone     = document.getElementById('telemovel').value.trim();
-    const password  = document.getElementById('password').value;
-    const confirmar = document.getElementById('confirmar').value;
-    const role      = document.querySelector('input[name="tipo"]:checked').value;
-    const erro      = document.getElementById('erro');
+    const nome     = document.getElementById('nome').value.trim();
+    const apelido  = document.getElementById('apelido').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const phone    = document.getElementById('telemovel').value.trim();
+    const password = document.getElementById('password').value;
+    const erro     = document.getElementById('erro');
     erro.style.display = 'none';
 
-    if (password !== confirmar) { erro.textContent = 'As palavras-passe não coincidem.'; erro.style.display = 'block'; return; }
-
-    const res  = await fetch('../backend/auth/register.php', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({full_name, email, phone, password, role}) });
+    const res  = await fetch('../backend/auth/register.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ full_name: nome + ' ' + apelido, email, phone, password, role: 'PASSENGER' })
+    });
     const data = await res.json();
 
     if (data.success) {
-      window.location.href = data.user.role === 'ADMIN' ? 'admin.html' : 'dashboard.html';
+      const r = data.user.role;
+      window.location.href = r === 'ADMIN' ? 'admin.html'
+        : (r === 'DRIVER' || r === 'BOTH') ? 'dashboard_condutor.html'
+        : 'dashboard.html';
     } else {
-      erro.textContent = data.message;
-      erro.style.display = 'block';
+      erro.textContent   = data.message;
+      erro.style.display = 'flex';
     }
   }
 </script>
