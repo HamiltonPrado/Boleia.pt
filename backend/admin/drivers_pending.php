@@ -8,7 +8,7 @@ require_admin();
 
 $rows = db()->query(
     "SELECT dp.id, dp.tier, dp.verification_status, dp.created_at,
-            u.id AS user_id, u.email, u.full_name, u.phone,
+            u.id AS user_id, u.email, u.full_name, u.phone, u.avatar_url,
             dp.car_make, dp.car_model, dp.car_year, dp.car_plate
      FROM driver_profiles dp INNER JOIN users u ON dp.user_id = u.id
      WHERE dp.verification_status = 'PENDING' ORDER BY dp.created_at ASC"
