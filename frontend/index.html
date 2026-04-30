@@ -8,69 +8,188 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <script>
     fetch('../backend/auth/me.php').then(r => r.json()).then(d => {
-      if (d.user) location.replace('dashboard.html');
+      if (d.user) {
+        const r = d.user.role;
+        location.replace(r === 'ADMIN' ? 'admin.html'
+          : (r === 'DRIVER' || r === 'BOTH') ? 'dashboard_condutor.html'
+          : 'dashboard.html');
+      }
     }).catch(() => {});
   </script>
+  <style>
+    
+    .rc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+    .rc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: box-shadow 150ms, border-color 150ms;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .rc:hover { box-shadow: var(--shadow-md); border-color: var(--primary); }
+    .rc-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .rc-driver { display: flex; align-items: center; gap: 10px; }
+    .rc-av {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--primary-light); color: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.68rem; font-weight: 700; flex-shrink: 0; overflow: hidden;
+      border: 1.5px solid var(--border);
+    }
+    .rc-av img { width: 100%; height: 100%; object-fit: cover; }
+    .rc-dname { font-size: 0.875rem; font-weight: 600; color: var(--dark); }
+    .rc-rating { font-size: 0.78rem; color: var(--warning); font-weight: 600; }
+    .rc-price {
+      font-size: 1.3rem; font-weight: 800; color: var(--success);
+      font-family: 'Plus Jakarta Sans','Inter',sans-serif; white-space: nowrap;
+    }
+    .rc-route { display: flex; align-items: stretch; gap: 12px; }
+    .rc-dots { display: flex; flex-direction: column; align-items: center; padding-top: 3px; }
+    .rc-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .rc-dot-g { background: var(--success); }
+    .rc-dot-b { background: var(--primary); }
+    .rc-vline { width: 2px; background: var(--border); flex: 1; margin: 4px 0; min-height: 18px; }
+    .rc-addrs { flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; }
+    .rc-addr { font-size: 0.9rem; font-weight: 600; color: var(--dark); }
+    .rc-addr-time { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }
+    .rc-foot { display: flex; align-items: center; justify-content: space-between; }
+    .rc-seats { font-size: 0.8rem; font-weight: 600; color: var(--success); display: flex; align-items: center; gap: 4px; }
+    .rc-date  { font-size: 0.78rem; color: var(--muted); }
+
+    
+    .demo-notice {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 99px; padding: 4px 12px; margin-bottom: 16px;
+    }
+
+    
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-header h2 { margin: 0; }
+
+    
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .how-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 22px 20px; box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .how-icon {
+      width: 48px; height: 48px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; margin: 0 auto 12px;
+    }
+    .how-num {
+      font-size: 0.68rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;
+    }
+    .how-title { font-size: 0.95rem; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+    .how-desc  { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+  </style>
 </head>
 <body>
 
-<h1><i class="bi bi-car-front-fill" aria-hidden="true"></i> Boleia.pt</h1>
-<nav>
-  <a href="#viagens"><i class="bi bi-car-front-fill"></i> Viagens</a>
-  <a href="#oferecer"><i class="bi bi-plus-circle"></i> Oferecer Boleia</a>
-  <a href="#como-funciona"><i class="bi bi-question-circle"></i> Como Funciona</a>
-  <a href="login.html"><i class="bi bi-box-arrow-in-right"></i> Entrar</a>
-  <a href="registo.html"><i class="bi bi-person-plus-fill"></i> Registar</a>
-</nav>
-<div class="hero">
-  <p class="hero-title"><i class="bi bi-car-front-fill"></i> Partilha a viagem, divide os custos</p>
-  <p class="hero-sub">Encontra boleias perto de ti e poupa no dia-a-dia. Rápido, seguro e simples.</p>
-  <div class="hero-stats" id="hero-stats">
-    <div class="hero-stat">
-      <strong id="stat-viagens"><div class="skeleton" style="width:48px;height:26px;background:rgba(255,255,255,.2)"></div></strong>
-      <span>Viagens concluídas</span>
+<div class="navbar-wrapper">
+  <header class="navbar">
+    <a class="brand" href="index.html">
+      <div class="brand-icon"><i class="bi bi-car-front-fill"></i></div>
+      Boleia.pt
+    </a>
+    <div class="nav-links">
+      <a href="#viagens" class="nav-item"><i class="bi bi-car-front-fill"></i> Viagens</a>
+      <a href="#como-funciona" class="nav-item"><i class="bi bi-question-circle"></i> Como Funciona</a>
     </div>
-    <div class="hero-stat">
-      <strong id="stat-rotas"><div class="skeleton" style="width:40px;height:26px;background:rgba(255,255,255,.2)"></div></strong>
-      <span>Rotas ativas</span>
+    <div class="user-actions">
+      <a href="login.html" class="nav-item"><i class="bi bi-box-arrow-in-right"></i> Entrar</a>
+      <a href="registo.html" class="nav-btn">Registar</a>
     </div>
-    <div class="hero-stat">
-      <strong id="stat-users"><div class="skeleton" style="width:48px;height:26px;background:rgba(255,255,255,.2)"></div></strong>
-      <span>Utilizadores</span>
-    </div>
-  </div>
-</div>
-<div class="filter-bar" id="viagens">
-  <h2 style="margin:0 0 14px;border:none;padding:0;font-size:1.05rem"><i class="bi bi-search"></i> Pesquisar Viagem</h2>
-  <form onsubmit="pesquisar(event)">
-    <div class="form-row">
-      <div class="form-group">
-        <label for="data">Data</label>
-        <input type="date" id="data" required />
-      </div>
-      <div style="display:flex;align-items:flex-end;gap:8px;padding-bottom:1px">
-        <button type="submit"><i class="bi bi-search"></i> Pesquisar</button>
-      </div>
-    </div>
-  </form>
+  </header>
 </div>
 
+<section class="hero" id="viagens">
+  <p class="hero-title">A boleia perfeita,<br>sempre à mão.</p>
+  <p class="hero-sub">Partilha a viagem, divide os custos. Rápido, seguro e económico.</p>
+  <div class="hero-search">
+    <div class="hero-search-input">
+      <i class="bi bi-geo-alt-fill" style="color:var(--success)"></i>
+      <input type="text" id="origem" placeholder="Origem (ex: Lisboa)" />
+    </div>
+    <div class="hero-search-input">
+      <i class="bi bi-geo-alt-fill" style="color:var(--danger)"></i>
+      <input type="text" id="destino" placeholder="Destino (ex: Porto)" />
+    </div>
+    <div class="hero-search-input">
+      <i class="bi bi-calendar-event"></i>
+      <input type="date" id="data" />
+    </div>
+    <button onclick="pesquisarFromHero()" class="nav-btn" style="padding:11px 26px;">
+      <i class="bi bi-search"></i> Pesquisar
+    </button>
+  </div>
+  <div class="hero-stats" id="hero-stats">
+    <div class="hero-stat"><strong id="stat-viagens">—</strong><span>Viagens concluídas</span></div>
+    <div class="hero-stat"><strong id="stat-rotas">—</strong><span>Rotas ativas</span></div>
+    <div class="hero-stat"><strong id="stat-users">—</strong><span>Utilizadores</span></div>
+  </div>
+</section>
+
+<div class="section-header">
+  <h2><i class="bi bi-lightning-charge-fill"></i> Próximas viagens</h2>
+  <a href="login.html" style="font-size:0.875rem;color:var(--primary);text-decoration:none;font-weight:500">Ver todas <i class="bi bi-arrow-right"></i></a>
+</div>
+<div id="demo-notice" style="display:none">
+  <span class="demo-notice"><i class="bi bi-info-circle"></i> Exemplos de viagens — <a href="registo.html" style="color:var(--primary)">regista-te</a> para ver rotas reais</span>
+</div>
 <div id="tabela-viagens"></div>
 
 <hr>
 
-<h2 id="oferecer"><i class="bi bi-plus-circle"></i> Oferecer Boleia</h2>
-<p>Tens carro e queres partilhar a viagem? <a href="login.html">Entra na tua conta</a> para publicar uma rota e começas a receber passageiros.</p>
-
-<hr>
-
-<h2 id="como-funciona"><i class="bi bi-question-circle"></i> Como Funciona</h2>
-<ol style="line-height:2.2;padding-left:20px">
-  <li><b>Pesquisa</b> — Indica a data e encontra viagens disponíveis.</li>
-  <li><b>Reserva</b> — Escolhe a viagem e reserva o teu lugar.</li>
-  <li><b>Viaja</b> — Parte com o condutor na hora combinada.</li>
-  <li><b>Avalia</b> — No final, deixa uma avaliação ao condutor.</li>
-</ol>
+<h2 id="como-funciona" style="margin-bottom:16px"><i class="bi bi-question-circle"></i> Como Funciona</h2>
+<div class="how-grid">
+  <div class="how-card">
+    <div class="how-icon" style="background:var(--primary-light);color:var(--primary)"><i class="bi bi-search"></i></div>
+    <div class="how-num">Passo 1</div>
+    <div class="how-title">Pesquisa</div>
+    <div class="how-desc">Indica a origem, destino e data para encontrar viagens disponíveis.</div>
+  </div>
+  <div class="how-card">
+    <div class="how-icon" style="background:var(--success-light);color:var(--success)"><i class="bi bi-ticket-perforated-fill"></i></div>
+    <div class="how-num">Passo 2</div>
+    <div class="how-title">Reserva</div>
+    <div class="how-desc">Escolhe a viagem, seleciona as paragens e reserva o teu lugar.</div>
+  </div>
+  <div class="how-card">
+    <div class="how-icon" style="background:#EEF2FF;color:#4F46E5"><i class="bi bi-car-front-fill"></i></div>
+    <div class="how-num">Passo 3</div>
+    <div class="how-title">Viaja</div>
+    <div class="how-desc">Parte com o condutor na hora combinada e poupa na viagem.</div>
+  </div>
+  <div class="how-card">
+    <div class="how-icon" style="background:var(--warning-light);color:var(--warning)"><i class="bi bi-star-fill"></i></div>
+    <div class="how-num">Passo 4</div>
+    <div class="how-title">Avalia</div>
+    <div class="how-desc">No final, deixa uma avaliação para ajudar a comunidade a crescer.</div>
+  </div>
+</div>
 
 <hr>
 
@@ -80,77 +199,129 @@
 
 <script src="utils.js"></script>
 <script>
-  function fmt(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; }
+  const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  function fmtDate(d) {
+    if (!d) return '—';
+    const [y, m, dd] = d.split('-');
+    const hoje = new Date().toISOString().slice(0,10);
+    const aman = new Date(Date.now()+86400000).toISOString().slice(0,10);
+    if (d === hoje) return 'Hoje';
+    if (d === aman) return 'Amanhã';
+    return `${parseInt(dd)} ${MESES[parseInt(m)-1]}`;
+  }
   function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  async function carregarViagens(date) {
+  const DEMO_ROUTES = [
+    { driver_name:'João Rodrigues', avg_rating:'4.8', total_trips:32, price_per_seat:'14', depart_time:'08:30', origem:'Lisboa', destino:'Porto',  total_seats:4, seats_taken:1, date:null },
+    { driver_name:'Ana Silva',      avg_rating:'4.6', total_trips:18, price_per_seat:'6',  depart_time:'07:15', origem:'Porto',  destino:'Braga',  total_seats:3, seats_taken:1, date:null },
+    { driver_name:'Miguel Costa',   avg_rating:'4.9', total_trips:54, price_per_seat:'8',  depart_time:'07:45', origem:'Setúbal',destino:'Lisboa', total_seats:4, seats_taken:0, date:null },
+    { driver_name:'Sofia Martins',  avg_rating:'4.7', total_trips:21, price_per_seat:'22', depart_time:'06:00', origem:'Faro',   destino:'Lisboa', total_seats:2, seats_taken:1, date:null },
+    { driver_name:'Pedro Alves',    avg_rating:'4.5', total_trips:11, price_per_seat:'10', depart_time:'09:00', origem:'Coimbra',destino:'Lisboa', total_seats:3, seats_taken:0, date:null },
+    { driver_name:'Mariana Fonseca',avg_rating:'5.0', total_trips:8,  price_per_seat:'18', depart_time:'10:30', origem:'Braga',  destino:'Porto',  total_seats:2, seats_taken:1, date:null },
+  ];
+
+  function renderCard(v, isDemo) {
+    const livres   = Number(v.total_seats) - Number(v.seats_taken);
+    const rating   = v.avg_rating ? Number(v.avg_rating).toFixed(1) : null;
+    const preco    = Math.round(Number(v.price_per_seat));
+    const initials = (v.driver_name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const avHtml   = v.avatar_url
+      ? `<img src="../${esc(v.avatar_url)}" alt="">`
+      : initials;
+    const origem  = (v.origem||'—').split(',')[0].trim();
+    const destino = (v.destino||'—').split(',')[0].trim();
+
+    return `<div class="rc" onclick="location.href='${isDemo ? 'registo.html' : 'login.html'}'">
+      <div class="rc-top">
+        <div class="rc-driver">
+          <div class="rc-av">${avHtml}</div>
+          <div>
+            <div class="rc-dname">${esc(v.driver_name)}</div>
+            ${rating ? `<div class="rc-rating">★ ${rating} <span style="color:var(--muted);font-weight:400">(${v.total_trips||0})</span></div>` : ''}
+          </div>
+        </div>
+        <div class="rc-price">${preco}€</div>
+      </div>
+      <div class="rc-route">
+        <div class="rc-dots">
+          <span class="rc-dot rc-dot-g"></span>
+          <span class="rc-vline"></span>
+          <span class="rc-dot rc-dot-b"></span>
+        </div>
+        <div class="rc-addrs">
+          <div>
+            <div class="rc-addr">${esc(origem)}</div>
+            <div class="rc-addr-time">${v.depart_time?.slice(0,5)||'—'}</div>
+          </div>
+          <div class="rc-addr" style="color:var(--muted);font-weight:600">${esc(destino)}</div>
+        </div>
+      </div>
+      <div class="rc-foot">
+        <span class="rc-seats"><i class="bi bi-check-circle-fill"></i> ${livres} lugar${livres!==1?'es':''}</span>
+        ${v.date ? `<span class="rc-date">${fmtDate(v.date)}</span>` : '<span class="rc-date" style="color:var(--primary);font-size:0.75rem">Exemplo</span>'}
+      </div>
+    </div>`;
+  }
+
+  async function carregarViagens() {
     const div = document.getElementById('tabela-viagens');
-    div.innerHTML = skeletonRows(4, [120,120,60,50,100,40,40,60,60]);
+    div.innerHTML = `<div class="rc-grid">${[1,2,3,4,5,6].map(() => `
+      <div class="rc" style="cursor:default">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="skeleton" style="width:34px;height:34px;border-radius:50%"></div>
+          <div><div class="skeleton" style="width:90px;height:12px;margin-bottom:5px"></div><div class="skeleton" style="width:50px;height:10px"></div></div>
+          <div class="skeleton" style="width:40px;height:26px;border-radius:8px;margin-left:auto"></div>
+        </div>
+        <div class="skeleton" style="width:100%;height:52px;border-radius:8px"></div>
+        <div class="skeleton" style="width:70%;height:10px;border-radius:4px"></div>
+      </div>`).join('')}</div>`;
 
-    const res  = await fetch(`../backend/bookings/search.php?date=${date}`);
-    const data = await res.json();
-    if (!data.success) {
-      div.innerHTML = `<div class="alert alert-danger"><i class="bi bi-x-circle-fill"></i> ${esc(data.message)}</div>`;
-      return;
-    }
-    const r = data.results || [];
-    if (r.length === 0) {
-      div.innerHTML = `<div class="empty-state">
-        <i class="bi bi-calendar-x"></i>
-        <p>Sem viagens disponíveis para ${fmt(date)}.</p>
-        <p style="font-size:0.8rem">Tenta outra data ou <a href="registo.html">regista-te</a> para receber notificações.</p>
-      </div>`;
-      return;
-    }
+    try {
+      const res  = await fetch('../backend/routes/upcoming.php?limit=6');
+      const data = await res.json();
+      const routes = data.routes || [];
 
-    div.innerHTML = `
-      <p class="result-count"><i class="bi bi-check-circle-fill"></i> ${r.length} viagem(ns) para ${fmt(date)}</p>
-      <div class="table-wrap"><table border="1" cellpadding="8">
-        <thead><tr>
-          <th>Origem</th><th>Destino</th><th>Data</th><th>Hora</th>
-          <th>Condutor</th><th>Avaliação</th><th>Lugares</th><th>Preço/pessoa</th><th>Ação</th>
-        </tr></thead>
-        <tbody>
-          ${r.map(v => {
-            const stops   = JSON.parse(v.stops || '[]');
-            const origem  = stops[0]?.address || '—';
-            const destino = stops[stops.length-1]?.address || '—';
-            const livres  = v.total_seats - v.seats_taken;
-            const rating  = v.avg_rating ? Number(v.avg_rating).toFixed(1) + ' ★' : '—';
-            return `<tr>
-              <td>${esc(origem)}</td>
-              <td>${esc(destino)}</td>
-              <td>${fmt(v.date)}</td>
-              <td>${v.depart_time?.slice(0,5) || '—'}</td>
-              <td>${esc(v.driver_name)}</td>
-              <td>${rating}</td>
-              <td>${livres}</td>
-              <td class="price-tag">${Number(v.price_per_seat).toFixed(2)} <small>€</small></td>
-              <td><a href="login.html" class="btn-sm btn-info"><i class="bi bi-arrow-right-circle-fill"></i> Ver</a></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table></div>`;
+      if (routes.length > 0) {
+        div.innerHTML = `<div class="rc-grid">${routes.map(v => renderCard(v, false)).join('')}</div>`;
+      } else {
+        document.getElementById('demo-notice').style.display = '';
+        div.innerHTML = `<div class="rc-grid">${DEMO_ROUTES.map(v => renderCard(v, true)).join('')}</div>`;
+      }
+    } catch {
+      document.getElementById('demo-notice').style.display = '';
+      div.innerHTML = `<div class="rc-grid">${DEMO_ROUTES.map(v => renderCard(v, true)).join('')}</div>`;
+    }
   }
 
   async function carregarStats() {
-    const res  = await fetch('../backend/routes/public_stats.php');
-    const data = await res.json();
-    document.getElementById('stat-viagens').textContent = data.total_trips  || '—';
-    document.getElementById('stat-rotas').textContent   = data.active_routes || '—';
-    document.getElementById('stat-users').textContent   = data.total_users  || '—';
+    try {
+      const res  = await fetch('../backend/routes/public_stats.php');
+      const data = await res.json();
+      document.getElementById('stat-viagens').textContent = data.total_trips   || '—';
+      document.getElementById('stat-rotas').textContent   = data.active_routes || '—';
+      document.getElementById('stat-users').textContent   = data.total_users   || '—';
+    } catch {}
   }
 
-  function pesquisar(e) {
-    e.preventDefault();
-    const date = document.getElementById('data').value;
-    if (!date) { toast('Seleciona uma data.', 'warning'); return; }
-    carregarViagens(date);
+  function pesquisarFromHero() {
+    const origem  = document.getElementById('origem').value.trim();
+    const destino = document.getElementById('destino').value.trim();
+    const date    = document.getElementById('data').value;
+    let url = 'pesquisa.html';
+    const params = [];
+    if (origem)  params.push('origem='  + encodeURIComponent(origem));
+    if (destino) params.push('destino=' + encodeURIComponent(destino));
+    if (date)    params.push('data='    + date);
+    if (params.length) url += '?' + params.join('&');
+    location.href = url;
   }
 
-  const hoje = new Date().toISOString().slice(0,10);
-  document.getElementById('data').value = hoje;
-  carregarViagens(hoje);
+  document.getElementById('data').value = new Date().toISOString().slice(0,10);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && ['origem','destino','data'].includes(e.target.id)) pesquisarFromHero();
+  });
+
+  carregarViagens();
   carregarStats();
 </script>
 
