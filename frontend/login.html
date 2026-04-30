@@ -9,18 +9,34 @@
 </head>
 <body>
 
-<h1><i class="bi bi-car-front-fill" aria-hidden="true"></i> Boleia.pt</h1>
-<h2>Entrar na conta</h2>
+<div class="navbar-wrapper">
+  <header class="navbar">
+    <a class="brand" href="index.html">
+      <div class="brand-icon"><i class="bi bi-car-front-fill"></i></div>
+      Boleia.pt
+    </a>
+    <div class="nav-links">
+      <a href="index.html#como-funciona" class="nav-item"><i class="bi bi-question-circle"></i> Como Funciona</a>
+    </div>
+    <div class="user-actions">
+      <a href="registo.html" class="nav-btn">Registar</a>
+    </div>
+  </header>
+</div>
 
-<div class="caixa" style="max-width:380px;margin-top:20px">
-  <form onsubmit="entrar(event)" style="display:flex;flex-direction:column;gap:14px">
-    <div>
+<div class="auth-card">
+  <div class="auth-icon"><i class="bi bi-car-front-fill"></i></div>
+  <h2>Bem-vindo de volta</h2>
+  <p class="auth-subtitle">Acede à tua conta para continuar.</p>
+
+  <form onsubmit="entrar(event)">
+    <div class="form-group">
       <label for="email">Email</label>
       <input type="email" id="email" placeholder="exemplo@email.com" autocomplete="email" required />
     </div>
-    <div>
+    <div class="form-group">
       <label for="password">Palavra-passe</label>
-      <input type="password" id="password" placeholder="A tua palavra-passe" autocomplete="current-password" required />
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required />
     </div>
 
     <div id="erro" class="alert alert-danger" style="display:none" role="alert">
@@ -28,16 +44,12 @@
       <span id="erro-msg"></span>
     </div>
 
-    <button type="submit" id="btn-entrar"><i class="bi bi-box-arrow-in-right"></i> Entrar</button>
+    <button type="submit" id="btn-entrar" class="btn-submit"><i class="bi bi-box-arrow-in-right"></i> Entrar na Conta</button>
   </form>
 
-  <p style="margin-top:16px;font-size:0.875rem;color:var(--muted)">
-    Ainda não tens conta? <a href="registo.html">Regista-te aqui</a>
-  </p>
+  <p class="auth-footer">Ainda não tens conta? <a href="registo.html">Regista-te aqui</a></p>
+  <p class="auth-footer" style="margin-top:8px"><a href="index.html"><i class="bi bi-arrow-left"></i> Voltar ao início</a></p>
 </div>
-
-<br>
-<a href="index.html" class="back-link"><i class="bi bi-arrow-left"></i> Voltar ao início</a>
 
 <script src="utils.js"></script>
 <script>
@@ -61,7 +73,10 @@
       const data = await res.json();
 
       if (data.success) {
-        window.location.href = data.user.role === 'ADMIN' ? 'admin.html' : 'dashboard.html';
+        const r = data.user.role;
+        window.location.href = r === 'ADMIN' ? 'admin.html'
+          : (r === 'DRIVER' || r === 'BOTH') ? 'dashboard_condutor.html'
+          : 'dashboard.html';
       } else {
         erroMsg.textContent = data.message;
         erroDiv.style.display = 'flex';
