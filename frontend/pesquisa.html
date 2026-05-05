@@ -6,6 +6,7 @@
   <title>Boleia.pt — Pesquisar Boleia</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     .search-bar {
       background: var(--surface);
@@ -144,6 +145,51 @@
       font-size: 0.82rem; font-weight: 700; color: var(--success);
     }
 
+    .results-layout.com-mapa { grid-template-columns: 240px 1fr 380px; }
+    .mapa-col {
+      position: sticky; top: 110px;
+      height: 520px;
+      border-radius: 14px; overflow: hidden;
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+      display: none;
+    }
+    .mapa-col.visivel { display: block; }
+    #mapa-pesquisa { width: 100%; height: 100%; }
+    .btn-toggle-mapa {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 7px 16px; border-radius: 99px;
+      font-size: 0.82rem; font-weight: 600;
+      background: var(--surface); color: var(--text);
+      border: 1.5px solid var(--border);
+      cursor: pointer; font-family: inherit;
+      transition: border-color 150ms, color 150ms, background 150ms;
+    }
+    .btn-toggle-mapa:hover,
+    .btn-toggle-mapa.ativo { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+    .leaflet-popup-content-wrapper { border-radius: 10px !important; font-family: 'Inter',sans-serif; font-size: 0.82rem; }
+    .rc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 14px; margin-bottom: 16px; }
+    .rc { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow); cursor:pointer; transition:box-shadow 150ms,border-color 150ms; display:flex; flex-direction:column; gap:14px; }
+    .rc:hover { box-shadow:var(--shadow-md); border-color:var(--primary); }
+    .rc-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .rc-drv { display:flex; align-items:center; gap:10px; }
+    .rc-av2 { width:34px; height:34px; border-radius:50%; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:0.68rem; font-weight:700; flex-shrink:0; overflow:hidden; border:1.5px solid var(--border); }
+    .rc-av2 img { width:100%; height:100%; object-fit:cover; }
+    .rc-dname2 { font-size:0.875rem; font-weight:600; color:var(--dark); }
+    .rc-rat2 { font-size:0.78rem; color:var(--warning); font-weight:600; }
+    .rc-price2 { font-size:1.3rem; font-weight:800; color:var(--success); font-family:'Plus Jakarta Sans','Inter',sans-serif; white-space:nowrap; }
+    .rc-route2 { display:flex; align-items:stretch; gap:12px; }
+    .rc-dots2 { display:flex; flex-direction:column; align-items:center; padding-top:3px; }
+    .rc-dot2 { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+    .rc-dot-g2 { background:var(--success); } .rc-dot-b2 { background:var(--primary); }
+    .rc-vline2 { width:2px; background:var(--border); flex:1; margin:4px 0; min-height:18px; }
+    .rc-addrs2 { flex:1; display:flex; flex-direction:column; justify-content:space-between; gap:6px; }
+    .rc-addr2 { font-size:0.9rem; font-weight:600; color:var(--dark); }
+    .rc-addr-time2 { font-size:0.78rem; color:var(--muted); margin-top:1px; }
+    .rc-foot2 { display:flex; align-items:center; justify-content:space-between; }
+    .rc-seats2 { font-size:0.8rem; font-weight:600; color:var(--success); display:flex; align-items:center; gap:4px; }
+    .rc-date2 { font-size:0.78rem; color:var(--muted); }
+
+    @media (max-width: 1100px) { .results-layout.com-mapa { grid-template-columns: 240px 1fr; } .mapa-col { display: none !important; } }
     @media (max-width: 768px) {
       .results-layout { grid-template-columns: 1fr; }
       .filter-sidebar { position: static; }
@@ -234,9 +280,12 @@
   </div>
 </div>
 
-<div id="pre-search" class="empty-state" style="padding:60px 20px">
-  <i class="bi bi-car-front-fill"></i>
-  <p>Seleciona uma data para encontrar viagens disponíveis.</p>
+<div id="pre-search">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+    <h2 style="margin:0"><i class="bi bi-lightning-charge-fill"></i> Próximas viagens disponíveis</h2>
+    <span style="font-size:0.82rem;color:var(--muted)">Seleciona uma data para filtrar</span>
+  </div>
+  <div id="pre-search-grid"><div class="rc-grid" id="pre-rc-grid"></div></div>
 </div>
 
 <div id="search-summary" style="display:none;margin-bottom:24px">
@@ -278,8 +327,15 @@
   </aside>
 
   <div>
-    <p class="results-header" id="results-title"></p>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <p class="results-header" id="results-title" style="margin:0"></p>
+      <button class="btn-toggle-mapa" id="btn-mapa" onclick="toggleMapa()"><i class="bi bi-map-fill"></i> Ver no mapa</button>
+    </div>
     <div id="resultados"></div>
+  </div>
+
+  <div class="mapa-col" id="mapa-col">
+    <div id="mapa-pesquisa"></div>
   </div>
 </div>
 
@@ -293,9 +349,85 @@
   </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="utils.js"></script>
 <script>
   let todosResultados = [];
+  let mapaObj = null;
+  let mapaAtivo = false;
+  let mapaMarkers = [];
+
+  function toggleMapa() {
+    mapaAtivo = !mapaAtivo;
+    const col = document.getElementById('mapa-col');
+    const btn = document.getElementById('btn-mapa');
+    const layout = document.getElementById('results-layout');
+    col.classList.toggle('visivel', mapaAtivo);
+    layout.classList.toggle('com-mapa', mapaAtivo);
+    btn.classList.toggle('ativo', mapaAtivo);
+    btn.innerHTML = mapaAtivo
+      ? '<i class="bi bi-list-ul"></i> Ver lista'
+      : '<i class="bi bi-map-fill"></i> Ver no mapa';
+
+    if (mapaAtivo) {
+      if (!mapaObj) iniciarMapa();
+      else atualizarMapa(todosResultados);
+    }
+  }
+
+  function iniciarMapa() {
+    mapaObj = L.map('mapa-pesquisa').setView([39.5, -8.0], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(mapaObj);
+    atualizarMapa(todosResultados);
+  }
+
+  function atualizarMapa(resultados) {
+    if (!mapaObj) return;
+    mapaMarkers.forEach(m => mapaObj.removeLayer(m));
+    mapaMarkers = [];
+    const bounds = [];
+
+    resultados.forEach((v, idx) => {
+      const stops = typeof v.stops === 'string' ? JSON.parse(v.stops) : (v.stops || []);
+      const validos = stops.filter(s => s.lat && s.lng && !(s.lat == 0 && s.lng == 0));
+      if (validos.length < 2) return;
+
+      const origem  = validos[0];
+      const destino = validos[validos.length - 1];
+      const preco   = Number(v.price_per_seat).toFixed(2).replace('.', ',') + '€';
+      const cidade  = (validos[0].address || '').split(',')[0].trim();
+      const cidadeD = (validos[validos.length-1].address || '').split(',')[0].trim();
+      const realIdx = todosResultados.indexOf(v);
+
+      const dotO = L.divIcon({ html: `<div style="width:12px;height:12px;border-radius:50%;background:#16A34A;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>`, iconSize:[12,12], className:'' });
+      const dotD = L.divIcon({ html: `<div style="width:12px;height:12px;border-radius:50%;background:#2563EB;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>`, iconSize:[12,12], className:'' });
+      const priceIcon = L.divIcon({
+        html: `<div style="background:#2563EB;color:#fff;font-size:0.72rem;font-weight:700;padding:3px 7px;border-radius:99px;white-space:nowrap;font-family:Inter,sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer">${preco}</div>`,
+        iconSize: [50, 24], iconAnchor: [25, 12], className: ''
+      });
+
+      const mO = L.marker([origem.lat, origem.lng], { icon: dotO }).addTo(mapaObj);
+      const mD = L.marker([destino.lat, destino.lng], { icon: dotD }).addTo(mapaObj);
+      const mP = L.marker([(parseFloat(origem.lat)+parseFloat(destino.lat))/2, (parseFloat(origem.lng)+parseFloat(destino.lng))/2], { icon: priceIcon })
+        .addTo(mapaObj)
+        .on('click', () => realIdx >= 0 && verViagem({ preventDefault:()=>{} }, realIdx));
+
+      mP.bindPopup(`<b>${esc(cidade)} → ${esc(cidadeD)}</b><br>${v.depart_time?.slice(0,5)} · ${preco}`);
+
+      const linha = L.polyline([[origem.lat, origem.lng],[destino.lat, destino.lng]], {
+        color: '#2563EB', weight: 2.5, opacity: 0.5, dashArray: '5 5'
+      }).addTo(mapaObj);
+
+      mapaMarkers.push(mO, mD, mP, linha);
+      bounds.push([origem.lat, origem.lng], [destino.lat, destino.lng]);
+    });
+
+    if (bounds.length > 0) mapaObj.fitBounds(bounds, { padding: [30, 30] });
+    else mapaObj.setView([39.5, -8.0], 6);
+    setTimeout(() => mapaObj.invalidateSize(), 100);
+  }
 
   async function sair(e) {
     e.preventDefault();
@@ -337,6 +469,7 @@
     if (qp.get('destino')) document.getElementById('destino').value = qp.get('destino');
     if (qp.get('data'))    document.getElementById('data').value    = qp.get('data');
     if (qp.get('origem') || qp.get('destino') || qp.get('data')) pesquisar(null);
+    else carregarPreSearch();
     if (user.role === 'DRIVER' || user.role === 'BOTH') ajustarNavCondutor(user.role);
     if (user.role === 'ADMIN') {
       const nav = document.getElementById('nav-main');
@@ -348,6 +481,7 @@
     if (user.role === 'PASSENGER') {
       document.getElementById('nav-publicar').style.display = 'none';
     }
+    carregarBadgeReservas();
   }
 
   async function geocode(query) {
@@ -416,6 +550,7 @@
       }
       todosResultados = data.results || [];
       aplicarFiltros();
+      if (mapaAtivo) atualizarMapa(todosResultados);
     } finally {
       btnLoad(btn, false);
     }
@@ -444,6 +579,7 @@
     if (ordenar === 'time-asc')   filtrados.sort((a,b) => (a.depart_time||'').localeCompare(b.depart_time||''));
 
     renderResultados(filtrados);
+    if (mapaAtivo) atualizarMapa(filtrados);
   }
 
   function limparFiltros() {
@@ -688,6 +824,40 @@
   }
   function fmt(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; }
   function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  async function carregarPreSearch() {
+    const grid = document.getElementById('pre-rc-grid');
+    if (!grid) return;
+    grid.innerHTML = `${[1,2,3,4,5,6].map(()=>`<div class="rc" style="cursor:default"><div style="display:flex;gap:10px"><div class="skeleton" style="width:34px;height:34px;border-radius:50%"></div><div><div class="skeleton" style="width:90px;height:12px;margin-bottom:5px"></div><div class="skeleton" style="width:50px;height:10px"></div></div><div class="skeleton" style="width:40px;height:26px;border-radius:8px;margin-left:auto"></div></div><div class="skeleton" style="width:100%;height:52px;border-radius:8px"></div><div class="skeleton" style="width:70%;height:10px;border-radius:4px"></div></div>`).join('')}`;
+    try {
+      const data   = await fetch('../backend/routes/upcoming.php?limit=6').then(r=>r.json());
+      const routes = (data.routes||[]);
+      const DEMO = [
+        {driver_name:'Paulo Almeida',avg_rating:'4.8',price_per_seat:'14',depart_time:'08:30',origem:'Lisboa', destino:'Porto',  total_seats:4,seats_taken:1,date:null},
+        {driver_name:'Ana Silva',    avg_rating:'4.6',price_per_seat:'6', depart_time:'07:15',origem:'Porto',  destino:'Braga',  total_seats:3,seats_taken:1,date:null},
+        {driver_name:'Miguel Costa', avg_rating:'4.9',price_per_seat:'8', depart_time:'07:45',origem:'Setúbal',destino:'Lisboa', total_seats:4,seats_taken:0,date:null},
+        {driver_name:'Sofia Martins',avg_rating:'4.7',price_per_seat:'22',depart_time:'06:00',origem:'Faro',   destino:'Lisboa', total_seats:2,seats_taken:1,date:null},
+        {driver_name:'Pedro Alves',  avg_rating:'4.5',price_per_seat:'10',depart_time:'09:00',origem:'Coimbra',destino:'Lisboa', total_seats:3,seats_taken:0,date:null},
+        {driver_name:'Erica Silva',  avg_rating:'5.0',price_per_seat:'18',depart_time:'10:30',origem:'Braga',  destino:'Porto',  total_seats:2,seats_taken:1,date:null},
+      ];
+      const list = routes.length>0 ? routes : DEMO;
+      const MES  = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      function fmtD(d){if(!d)return'';const[y,m,dd]=d.split('-');const h=new Date().toISOString().slice(0,10);const a=new Date(Date.now()+86400000).toISOString().slice(0,10);if(d===h)return'Hoje';if(d===a)return'Amanhã';return`${parseInt(dd)} ${MES[parseInt(m)-1]}`;}
+      grid.innerHTML = list.map(v=>{
+        const livres=Number(v.total_seats)-Number(v.seats_taken);
+        const preco=Math.round(Number(v.price_per_seat));
+        const init=(v.driver_name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+        const av=v.avatar_url?`<img src="../${esc(v.avatar_url)}" alt="">`:init;
+        const href=v.occurrence_id?`viagem.html?oc=${encodeURIComponent(v.occurrence_id)}`:'#';
+        const onclick=v.occurrence_id?`location.href='${href}'`:`document.getElementById('data').value=new Date().toISOString().slice(0,10);pesquisar(null)`;
+        return `<div class="rc" onclick="${onclick}">
+          <div class="rc-top"><div class="rc-drv"><div class="rc-av2">${av}</div><div><div class="rc-dname2">${esc(v.driver_name)}</div>${v.avg_rating?`<div class="rc-rat2">★ ${Number(v.avg_rating).toFixed(1)}</div>`:''}</div></div><div class="rc-price2">${preco}€</div></div>
+          <div class="rc-route2"><div class="rc-dots2"><span class="rc-dot2 rc-dot-g2"></span><span class="rc-vline2"></span><span class="rc-dot2 rc-dot-b2"></span></div><div class="rc-addrs2"><div><div class="rc-addr2">${esc((v.origem||'—').split(',')[0])}</div><div class="rc-addr-time2">${v.depart_time?.slice(0,5)||'—'}</div></div><div class="rc-addr2" style="color:var(--muted)">${esc((v.destino||'—').split(',')[0])}</div></div></div>
+          <div class="rc-foot2"><span class="rc-seats2"><i class="bi bi-check-circle-fill"></i> ${livres} lugar${livres!==1?'es':''}</span>${v.date?`<span class="rc-date2">${fmtD(v.date)}</span>`:''}</div>
+        </div>`;
+      }).join('');
+    } catch { grid.innerHTML = ''; document.getElementById('pre-search').style.display='none'; }
+  }
 
   init();
 </script>
