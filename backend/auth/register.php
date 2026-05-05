@@ -11,6 +11,10 @@ $password  = $b['password'] ?? '';
 $full_name = trim($b['full_name'] ?? '');
 $phone     = trim($b['phone'] ?? '');
 $role      = $b['role'] ?? 'PASSENGER';
+$car_make  = trim($b['car_make']  ?? '') ?: null;
+$car_model = trim($b['car_model'] ?? '') ?: null;
+$car_year  = !empty($b['car_year']) ? (int)$b['car_year'] : null;
+$car_plate = trim($b['car_plate'] ?? '') ?: null;
 
 if (!$email || !$password || !$full_name || !$phone)
     json_out(['success' => false, 'message' => 'email, password, full_name e phone são obrigatórios'], 400);
@@ -38,8 +42,9 @@ $db->prepare(
 
 if ($userRole === 'DRIVER' || $userRole === 'BOTH') {
     $db->prepare(
-        "INSERT INTO driver_profiles (id, user_id, tier, verification_status) VALUES (?, ?, 'BASIC', 'NONE')"
-    )->execute([uuid(), $id]);
+        "INSERT INTO driver_profiles (id, user_id, tier, verification_status, car_make, car_model, car_year, car_plate)
+         VALUES (?, ?, 'BASIC', 'NONE', ?, ?, ?, ?)"
+    )->execute([uuid(), $id, $car_make, $car_model, $car_year, $car_plate]);
 }
 
 session_init();
