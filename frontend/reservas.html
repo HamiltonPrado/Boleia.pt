@@ -32,6 +32,7 @@
     .reserva-route {
       font-weight: 700; font-size: 1rem; color: var(--dark);
       margin: 5px 0 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 340px;
     }
     .reserva-meta { font-size: 0.82rem; color: var(--muted); }
     .reserva-right {
@@ -58,8 +59,45 @@
       font-family: inherit; padding: 0;
     }
     .reserva-avaliar:hover { color: #B45309; text-decoration: underline; }
+    .reserva-reclamar {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.82rem; font-weight: 500; color: var(--danger);
+      text-decoration: none; cursor: pointer; background: none; border: none;
+      font-family: inherit; padding: 0;
+    }
+    .reserva-reclamar:hover { color: #B91C1C; text-decoration: underline; }
 
     .badge-aguardar { background: #FEF9C3; color: #854D0E; }
+
+    .complaint-overlay {
+      position: fixed; inset: 0; z-index: 2000;
+      background: rgba(15,23,42,.5); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .complaint-card {
+      background: var(--surface); border-radius: 20px;
+      padding: 28px; max-width: 460px; width: 100%;
+      box-shadow: 0 24px 64px rgba(0,0,0,.18);
+      position: relative; animation: rv-in .18s ease;
+    }
+    .cpl-title { font-size: 1.1rem; font-weight: 700; color: var(--dark); margin: 0 0 4px; font-family: 'Plus Jakarta Sans','Inter',sans-serif; }
+    .cpl-sub   { font-size: 0.82rem; color: var(--muted); margin-bottom: 22px; }
+    .cpl-label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--dark); margin-bottom: 6px; }
+    .cpl-select, .cpl-textarea {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 10px 13px; font-size: 0.875rem; font-family: inherit;
+      color: var(--text); background: var(--bg); outline: none;
+      transition: border-color 180ms;
+    }
+    .cpl-select:focus, .cpl-textarea:focus { border-color: var(--primary); background: var(--surface); }
+    .cpl-textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+    .cpl-btn {
+      width: 100%; margin-top: 16px; padding: 13px; border-radius: 99px; border: none;
+      background: var(--danger); color: #fff;
+      font-size: 0.9rem; font-weight: 700; font-family: inherit; cursor: pointer;
+      transition: background 150ms;
+    }
+    .cpl-btn:hover { background: #B91C1C; }
 
     .section-sep {
       font-size: 0.72rem; font-weight: 700; color: var(--muted);
@@ -70,6 +108,28 @@
     .section-sep::after { content:''; flex:1; height:1px; background:var(--border); }
 
     .reserva-card.passada { opacity: 0.75; }
+
+    .rc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .rc { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow); cursor: pointer; transition: box-shadow 150ms, border-color 150ms; display: flex; flex-direction: column; gap: 14px; }
+    .rc:hover { box-shadow: var(--shadow-md); border-color: var(--primary); }
+    .rc-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .rc-driver { display: flex; align-items: center; gap: 10px; }
+    .rc-av { width: 34px; height: 34px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; flex-shrink: 0; overflow: hidden; border: 1.5px solid var(--border); }
+    .rc-av img { width: 100%; height: 100%; object-fit: cover; }
+    .rc-dname { font-size: 0.875rem; font-weight: 600; color: var(--dark); }
+    .rc-rating { font-size: 0.78rem; color: var(--warning); font-weight: 600; }
+    .rc-price { font-size: 1.3rem; font-weight: 800; color: var(--success); font-family: 'Plus Jakarta Sans','Inter',sans-serif; white-space: nowrap; }
+    .rc-route { display: flex; align-items: stretch; gap: 12px; }
+    .rc-dots { display: flex; flex-direction: column; align-items: center; padding-top: 3px; }
+    .rc-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .rc-dot-g { background: var(--success); } .rc-dot-b { background: var(--primary); }
+    .rc-vline { width: 2px; background: var(--border); flex: 1; margin: 4px 0; min-height: 18px; }
+    .rc-addrs { flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; }
+    .rc-addr { font-size: 0.9rem; font-weight: 600; color: var(--dark); }
+    .rc-addr-time { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }
+    .rc-foot { display: flex; align-items: center; justify-content: space-between; }
+    .rc-seats { font-size: 0.8rem; font-weight: 600; color: var(--success); display: flex; align-items: center; gap: 4px; }
+    .rc-date { font-size: 0.78rem; color: var(--muted); }
 
     @media (max-width: 560px) {
       .reserva-card { flex-wrap: wrap; gap: 12px; }
@@ -102,30 +162,116 @@
 <h2><i class="bi bi-ticket-perforated-fill"></i> As minhas reservas</h2>
 <div id="conteudo"><p>A carregar...</p></div>
 
+<div id="secao-sugestoes" style="display:none">
+  <h2><i class="bi bi-lightning-charge-fill"></i> Próximas viagens disponíveis</h2>
+  <div id="sugestoes-grid"></div>
+</div>
+
 <a href="dashboard.html" id="back-link" class="back-link" style="margin-top:28px;display:inline-flex"><i class="bi bi-arrow-left"></i> Voltar ao dashboard</a>
 
-<div id="modal-review" style="display:none" class="modal-overlay" onclick="fecharReviewOverlay(event)">
-  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="review-title">
-    <div class="modal-header">
-      <h3 id="review-title"><i class="bi bi-star-fill" style="color:var(--warning)"></i> Avaliar condutor</h3>
-      <button class="modal-close" onclick="fecharReview()" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
-    </div>
-    <input type="hidden" id="review-booking-id" />
-    <div class="form-group" style="margin-bottom:14px">
-      <label>Avaliação</label>
-      <select id="review-rating">
-        <option value="5">★★★★★ (5 — Excelente)</option>
-        <option value="4">★★★★☆ (4 — Bom)</option>
-        <option value="3">★★★☆☆ (3 — Razoável)</option>
-        <option value="2">★★☆☆☆ (2 — Mau)</option>
-        <option value="1">★☆☆☆☆ (1 — Muito mau)</option>
+<style>
+  .review-overlay {
+    position: fixed; inset: 0; z-index: 2000;
+    background: rgba(15,23,42,.5); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .review-card {
+    background: var(--surface); border-radius: 24px;
+    padding: 32px 28px; max-width: 400px; width: 100%;
+    box-shadow: 0 24px 64px rgba(0,0,0,.18);
+    animation: rv-in .18s ease;
+  }
+  @keyframes rv-in { from { opacity:0; transform:scale(.95) } to { opacity:1; transform:scale(1) } }
+  .rv-close {
+    position: absolute; top: 14px; right: 14px;
+    background: var(--bg); border: none; border-radius: 50%;
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); font-size: 0.9rem; transition: background 150ms;
+  }
+  .rv-close:hover { background: var(--border); color: var(--dark); }
+  .rv-wrap { position: relative; }
+  .rv-title {
+    font-size: 1.1rem; font-weight: 700; color: var(--dark);
+    margin: 0 0 4px; font-family: 'Plus Jakarta Sans','Inter',sans-serif;
+  }
+  .rv-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 24px; }
+  .rv-stars { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; }
+  .rv-star {
+    font-size: 2.6rem; background: none; border: none; cursor: pointer;
+    color: #E2E8F0; padding: 0 2px; line-height: 1;
+    transition: color 100ms, transform 100ms;
+  }
+  .rv-star.on { color: #F59E0B; }
+  .rv-star:hover { transform: scale(1.2); }
+  .rv-star-label {
+    text-align: center; font-size: 0.875rem; font-weight: 600;
+    color: var(--dark); min-height: 20px; margin-bottom: 20px;
+  }
+  .rv-textarea {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; font-size: 0.875rem; font-family: inherit;
+    color: var(--text); background: var(--bg); resize: none;
+    transition: border-color 180ms; outline: none;
+  }
+  .rv-textarea:focus { border-color: var(--primary); background: var(--surface); }
+  .rv-textarea::placeholder { color: #CBD5E1; }
+  .rv-btn {
+    width: 100%; margin-top: 14px;
+    padding: 14px; border-radius: 99px; border: none;
+    background: var(--primary); color: #fff;
+    font-size: 0.9rem; font-weight: 700; font-family: inherit;
+    cursor: pointer; transition: background 150ms;
+  }
+  .rv-btn:hover { background: var(--primary-dark); }
+</style>
+
+<div id="modal-complaint" style="display:none" class="complaint-overlay" onclick="fecharComplaintOverlay(event)">
+  <div class="complaint-card">
+    <button class="rv-close" onclick="fecharComplaint()" aria-label="Fechar" style="position:absolute;top:14px;right:14px"><i class="bi bi-x-lg"></i></button>
+    <p class="cpl-title"><i class="bi bi-flag-fill" style="color:var(--danger)"></i> Submeter reclamação</p>
+    <p class="cpl-sub">Descreve o que aconteceu. Iremos analisar em até 48h úteis.</p>
+    <input type="hidden" id="cpl-booking-id" />
+    <div style="margin-bottom:16px">
+      <label class="cpl-label">Tipo de reclamação</label>
+      <select class="cpl-select" id="cpl-type">
+        <option value="NO_SHOW">Condutor não apareceu</option>
+        <option value="BEHAVIOR">Comportamento inadequado</option>
+        <option value="PAYMENT">Problema com pagamento</option>
+        <option value="OTHER">Outro</option>
       </select>
     </div>
-    <div class="form-group" style="margin-bottom:20px">
-      <label>Comentário (opcional)</label>
-      <textarea id="review-comment" rows="3" style="resize:vertical"></textarea>
+    <div>
+      <label class="cpl-label">Descrição <span style="color:var(--muted);font-weight:400">(obrigatório)</span></label>
+      <textarea class="cpl-textarea" id="cpl-desc" placeholder="Descreve o que aconteceu em detalhe..."></textarea>
     </div>
-    <button onclick="submeterReview()" style="width:100%"><i class="bi bi-star-fill"></i> Enviar avaliação</button>
+    <button class="cpl-btn" onclick="submeterComplaint()"><i class="bi bi-send-fill"></i> Enviar reclamação</button>
+  </div>
+</div>
+
+<div id="modal-review" style="display:none" class="review-overlay" onclick="fecharReviewOverlay(event)">
+  <div class="rv-wrap">
+    <div class="review-card" role="dialog" aria-modal="true" aria-labelledby="review-title">
+      <button class="rv-close" onclick="fecharReview()" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
+      <p class="rv-title" id="review-title">Como foi a viagem?</p>
+      <p class="rv-sub">A tua opinião ajuda outros passageiros a escolher melhor.</p>
+
+      <input type="hidden" id="review-rating" value="5" />
+      <input type="hidden" id="review-booking-id" />
+
+      <div class="rv-stars">
+        <button class="rv-star" data-val="1" onclick="setRating(1)" aria-label="1 estrela">★</button>
+        <button class="rv-star" data-val="2" onclick="setRating(2)" aria-label="2 estrelas">★</button>
+        <button class="rv-star" data-val="3" onclick="setRating(3)" aria-label="3 estrelas">★</button>
+        <button class="rv-star" data-val="4" onclick="setRating(4)" aria-label="4 estrelas">★</button>
+        <button class="rv-star" data-val="5" onclick="setRating(5)" aria-label="5 estrelas">★</button>
+      </div>
+      <p class="rv-star-label" id="star-label" style="color:var(--muted)">Seleciona uma avaliação</p>
+
+      <textarea id="review-comment" class="rv-textarea" rows="3"
+        placeholder="Deixa um comentário sobre a viagem (opcional)..."></textarea>
+
+      <button class="rv-btn" onclick="submeterReview()">Enviar avaliação</button>
+    </div>
   </div>
 </div>
 
@@ -156,6 +302,7 @@
     }
 
     await carregarReservas();
+    carregarBadgeReservas();
   }
 
   async function carregarReservas() {
@@ -186,11 +333,8 @@
     );
 
     if (bookings.length === 0) {
-      div.innerHTML = `<div class="empty-state">
-        <i class="bi bi-ticket-perforated"></i>
-        <p>Ainda não tens nenhuma reserva.</p>
-        <a href="pesquisa.html" class="btn-sm btn-info"><i class="bi bi-search"></i> Pesquisar viagens</a>
-      </div>`;
+      div.innerHTML = `<p style="font-size:0.875rem;color:var(--muted);margin-bottom:4px">Ainda não tens reservas.</p>`;
+      carregarSugestoes();
       return;
     }
 
@@ -236,14 +380,16 @@
       NO_SHOW:             'Não compareceu',
     };
 
-    const podeCancelar = !passada && ['PENDING','CONFIRMED'].includes(b.status);
-    const podeAvaliar  = passada && reviewableIds.has(b.id);
+    const podeCancelar  = !passada && ['PENDING','CONFIRMED'].includes(b.status);
+    const podeAvaliar   = passada && reviewableIds.has(b.id);
+    const podeReclamar  = passada && ['COMPLETED','CANCELLED_DRIVER','NO_SHOW'].includes(b.status);
 
     const acaoHtml = podeCancelar
-      ? `<button class="reserva-cancel" onclick="cancelar(event,'${b.id}')"><i class="bi bi-x-circle-fill"></i> Cancelar</button>`
-      : podeAvaliar
-        ? `<button class="reserva-avaliar" onclick="abrirReview(event,'${b.id}')"><i class="bi bi-star-fill"></i> Avaliar</button>`
-        : '';
+      ? `<button class="reserva-cancel" onclick="cancelar(event,'${b.id}','${b.date}','${b.depart_time?.slice(0,5)||''}')"><i class="bi bi-x-circle-fill"></i> Cancelar</button>`
+      : `<div style="display:flex;gap:10px;align-items:center">
+          ${podeAvaliar  ? `<button class="reserva-avaliar"  onclick="abrirReview(event,'${b.id}')"><i class="bi bi-star-fill"></i> Avaliar</button>` : ''}
+          ${podeReclamar ? `<button class="reserva-reclamar" onclick="abrirComplaint(event,'${b.id}')"><i class="bi bi-flag-fill"></i> Reclamar</button>` : ''}
+        </div>`;
 
     return `<div class="reserva-card${passada ? ' passada' : ''}">
       <div class="reserva-avatar">${avatarHtml}</div>
@@ -251,6 +397,7 @@
         <span class="badge ${STATUS_BADGE[b.status] || 'badge-archived'}">${STATUS_LABEL[b.status] || b.status}</span>
         <div class="reserva-route">${esc(origem)} a ${esc(destino)}</div>
         <div class="reserva-meta">${fmtDatetime(b.date, b.depart_time)}</div>
+        ${b.status === 'CANCELLED_DRIVER' && b.driver_note ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:3px;font-style:italic"><i class="bi bi-chat-text"></i> "${esc(b.driver_note)}"</div>` : ''}
       </div>
       <div class="reserva-right">
         <span class="reserva-price">${preco}</span>
@@ -259,9 +406,17 @@
     </div>`;
   }
 
-  async function cancelar(e, id) {
+  async function cancelar(e, id, date, time) {
     e.preventDefault();
-    if (!await confirmar('Tens a certeza que queres cancelar esta reserva?', { titulo: 'Cancelar reserva?', okLabel: 'Cancelar reserva' })) return;
+    let refundMsg = '';
+    if (date && time) {
+      const depart   = new Date(date + 'T' + time);
+      const diffHours = (depart - Date.now()) / 3600000;
+      refundMsg = diffHours > 3
+        ? ' Reembolso: 100% (partida em mais de 3h).'
+        : ' Reembolso: 50% (partida em menos de 3h).';
+    }
+    if (!await confirmar('Tens a certeza que queres cancelar esta reserva?' + refundMsg, { titulo: 'Cancelar reserva?', okLabel: 'Cancelar reserva' })) return;
     const res  = await fetch(`../backend/bookings/cancel.php?id=${id}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.success) {
@@ -272,11 +427,25 @@
     }
   }
 
+  const STAR_LABELS = { 1:'Muito mau', 2:'Mau', 3:'Razoável', 4:'Bom', 5:'Excelente' };
+
+  function setRating(val) {
+    document.getElementById('review-rating').value     = val;
+    document.getElementById('star-label').textContent  = STAR_LABELS[val];
+    document.getElementById('star-label').style.color  = 'var(--dark)';
+    document.querySelectorAll('.rv-star').forEach(b => {
+      b.classList.toggle('on', Number(b.dataset.val) <= val);
+    });
+  }
+
   function abrirReview(e, bookingId) {
     if (e) e.preventDefault();
-    document.getElementById('review-booking-id').value  = bookingId;
-    document.getElementById('review-rating').value      = '5';
-    document.getElementById('review-comment').value     = '';
+    document.getElementById('review-booking-id').value = bookingId;
+    document.getElementById('review-comment').value    = '';
+    document.getElementById('review-rating').value     = '0';
+    document.getElementById('star-label').textContent  = 'Seleciona uma avaliação';
+    document.getElementById('star-label').style.color  = 'var(--muted)';
+    document.querySelectorAll('.rv-star').forEach(b => b.classList.remove('on'));
     document.getElementById('modal-review').style.display = 'flex';
   }
 
@@ -285,14 +454,16 @@
   }
 
   function fecharReviewOverlay(e) {
-    if (e.target === document.getElementById('modal-review')) fecharReview();
+    const overlay = document.getElementById('modal-review');
+    if (e.target === overlay || e.target === overlay.querySelector('.rv-wrap')) fecharReview();
   }
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharReview(); });
 
   async function submeterReview() {
     const bookingId = document.getElementById('review-booking-id').value;
-    const rating    = parseInt(document.getElementById('review-rating').value);
+    const rating    = parseInt(document.getElementById('review-rating').value) || 0;
+    if (!rating) { toast('Seleciona uma avaliação.', 'warning'); return; }
     const comment   = document.getElementById('review-comment').value.trim() || null;
 
     const res  = await fetch('../backend/reviews/create.php', {
@@ -307,6 +478,96 @@
       await carregarReservas();
     } else {
       toast(data.message || 'Erro ao enviar avaliação.', 'danger');
+    }
+  }
+
+  const DEMO_ROUTES = [
+    { driver_name:'Paulo Almeida', avg_rating:'4.8', price_per_seat:'14', depart_time:'08:30', origem:'Lisboa',  destino:'Porto',  total_seats:4, seats_taken:1, date:null },
+    { driver_name:'Ana Silva',     avg_rating:'4.6', price_per_seat:'6',  depart_time:'07:15', origem:'Porto',   destino:'Braga',  total_seats:3, seats_taken:1, date:null },
+    { driver_name:'Miguel Costa',  avg_rating:'4.9', price_per_seat:'8',  depart_time:'07:45', origem:'Setúbal', destino:'Lisboa', total_seats:4, seats_taken:0, date:null },
+    { driver_name:'Sofia Martins', avg_rating:'4.7', price_per_seat:'22', depart_time:'06:00', origem:'Faro',    destino:'Lisboa', total_seats:2, seats_taken:1, date:null },
+    { driver_name:'Pedro Alves',   avg_rating:'4.5', price_per_seat:'10', depart_time:'09:00', origem:'Coimbra', destino:'Lisboa', total_seats:3, seats_taken:0, date:null },
+    { driver_name:'Erica Silva',   avg_rating:'5.0', price_per_seat:'18', depart_time:'10:30', origem:'Braga',   destino:'Porto',  total_seats:2, seats_taken:1, date:null },
+  ];
+  const MESES_S = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  function fmtDateS(d) {
+    if (!d) return '';
+    const [y,m,dd] = d.split('-');
+    const hoje = new Date().toISOString().slice(0,10);
+    const aman = new Date(Date.now()+86400000).toISOString().slice(0,10);
+    if (d===hoje) return 'Hoje'; if (d===aman) return 'Amanhã';
+    return `${parseInt(dd)} ${MESES_S[parseInt(m)-1]}`;
+  }
+  function renderSugestaoCard(v) {
+    const livres = Number(v.total_seats) - Number(v.seats_taken);
+    const preco  = Math.round(Number(v.price_per_seat));
+    const init   = (v.driver_name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const av     = v.avatar_url ? `<img src="../${esc(v.avatar_url)}" alt="">` : init;
+    const href   = v.occurrence_id ? `viagem.html?oc=${encodeURIComponent(v.occurrence_id)}` : 'pesquisa.html';
+    return `<div class="rc" onclick="location.href='${href}'">
+      <div class="rc-top">
+        <div class="rc-driver"><div class="rc-av">${av}</div><div>
+          <div class="rc-dname">${esc(v.driver_name)}</div>
+          ${v.avg_rating ? `<div class="rc-rating">★ ${Number(v.avg_rating).toFixed(1)}</div>` : ''}
+        </div></div>
+        <div class="rc-price">${preco}€</div>
+      </div>
+      <div class="rc-route">
+        <div class="rc-dots"><span class="rc-dot rc-dot-g"></span><span class="rc-vline"></span><span class="rc-dot rc-dot-b"></span></div>
+        <div class="rc-addrs">
+          <div><div class="rc-addr">${esc((v.origem||'—').split(',')[0])}</div><div class="rc-addr-time">${v.depart_time?.slice(0,5)||'—'}</div></div>
+          <div class="rc-addr" style="color:var(--muted)">${esc((v.destino||'—').split(',')[0])}</div>
+        </div>
+      </div>
+      <div class="rc-foot">
+        <span class="rc-seats"><i class="bi bi-check-circle-fill"></i> ${livres} lugar${livres!==1?'es':''}</span>
+        ${v.date ? `<span class="rc-date">${fmtDateS(v.date)}</span>` : ''}
+      </div>
+    </div>`;
+  }
+  async function carregarSugestoes() {
+    const sec  = document.getElementById('secao-sugestoes');
+    const grid = document.getElementById('sugestoes-grid');
+    sec.style.display = '';
+    grid.innerHTML = `<div class="rc-grid">${[1,2,3,4,5,6].map(()=>`<div class="rc" style="cursor:default"><div style="display:flex;gap:10px"><div class="skeleton" style="width:34px;height:34px;border-radius:50%"></div><div><div class="skeleton" style="width:90px;height:12px;margin-bottom:5px"></div><div class="skeleton" style="width:50px;height:10px"></div></div><div class="skeleton" style="width:40px;height:26px;border-radius:8px;margin-left:auto"></div></div><div class="skeleton" style="width:100%;height:52px;border-radius:8px"></div><div class="skeleton" style="width:70%;height:10px;border-radius:4px"></div></div>`).join('')}</div>`;
+    try {
+      const data   = await fetch('../backend/routes/upcoming.php?limit=6').then(r=>r.json());
+      const routes = data.routes || [];
+      grid.innerHTML = `<div class="rc-grid">${(routes.length>0?routes:DEMO_ROUTES).map(renderSugestaoCard).join('')}</div>`;
+    } catch { grid.innerHTML = `<div class="rc-grid">${DEMO_ROUTES.map(renderSugestaoCard).join('')}</div>`; }
+  }
+
+  function abrirComplaint(e, bookingId) {
+    if (e) e.preventDefault();
+    document.getElementById('cpl-booking-id').value = bookingId;
+    document.getElementById('cpl-desc').value        = '';
+    document.getElementById('cpl-type').value        = 'NO_SHOW';
+    document.getElementById('modal-complaint').style.display = 'flex';
+  }
+  function fecharComplaint() { document.getElementById('modal-complaint').style.display = 'none'; }
+  function fecharComplaintOverlay(e) {
+    if (e.target === document.getElementById('modal-complaint')) fecharComplaint();
+  }
+  async function submeterComplaint() {
+    const bookingId = document.getElementById('cpl-booking-id').value;
+    const type      = document.getElementById('cpl-type').value;
+    const desc      = document.getElementById('cpl-desc').value.trim();
+    if (!desc) { toast('Descreve o que aconteceu.', 'warning'); return; }
+
+    const btn = document.querySelector('.cpl-btn');
+    btnLoad(btn, true, 'A enviar...');
+    const res  = await fetch('../backend/complaints/create.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_id: bookingId, type, description: desc })
+    });
+    const data = await res.json();
+    btnLoad(btn, false);
+    if (data.success) {
+      toast(data.message, 'success');
+      fecharComplaint();
+    } else {
+      toast(data.message || 'Erro ao enviar reclamação.', 'danger');
     }
   }
 
@@ -332,6 +593,10 @@
 
   init();
 </script>
+
+<footer>
+  <small>&copy; 2026 Boleia.pt — <a href="sobre.html">Sobre nós</a> | <a href="#">Termos de Uso</a> | <a href="#">Privacidade</a> | <a href="contacto.html">Contacto</a></small>
+</footer>
 
 </body>
 </html>
