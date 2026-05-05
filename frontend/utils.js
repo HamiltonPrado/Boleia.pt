@@ -92,6 +92,37 @@ window.confirmar = function (msg, { titulo = 'Tens a certeza?', okLabel = 'Confi
   });
 };
 
+window.carregarBadgeReservas = async function () {
+  try {
+    const res  = await fetch('../backend/bookings/pending_count.php');
+    if (!res.ok) return;
+    const data = await res.json();
+    const count = data.count || 0;
+    if (count === 0) return;
+
+    const badge = document.createElement('span');
+    badge.textContent = count > 9 ? '9+' : count;
+    badge.style.cssText = [
+      'display:inline-flex;align-items:center;justify-content:center',
+      'min-width:18px;height:18px;border-radius:99px',
+      'background:#DC2626;color:#fff',
+      'font-size:0.65rem;font-weight:700;padding:0 5px',
+      'margin-left:5px;line-height:1;font-family:inherit',
+      'vertical-align:middle'
+    ].join(';');
+
+    document.querySelectorAll('.nav-item, .nav-links a').forEach(a => {
+      const href = (a.getAttribute('href') || '');
+      if (href.includes('reservas')) {
+        if (!a.querySelector('[data-badge]')) {
+          badge.setAttribute('data-badge', '1');
+          a.appendChild(badge.cloneNode(true));
+        }
+      }
+    });
+  } catch {}
+};
+
 window.markNavActive = function () {
   const page = location.pathname.split('/').pop() || 'index.html';
   document.querySelectorAll('nav a[href]').forEach(a => {
