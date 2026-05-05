@@ -7,45 +7,78 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <style>
-    .perfil-header {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 24px 28px;
-      display: flex;
-      align-items: center;
+    .perfil-page-head { margin-bottom: 22px; }
+    .perfil-page-head h1 {
+      font-size: 1.5rem; font-weight: 800; color: var(--dark); margin-bottom: 4px;
+      font-family: 'Plus Jakarta Sans','Inter',sans-serif; letter-spacing: -0.02em;
+    }
+    .perfil-page-head p { font-size: 0.875rem; color: var(--muted); margin: 0; }
+
+    .info-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
       gap: 20px;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow);
-      flex-wrap: wrap;
+      align-items: start;
     }
-    .perfil-avatar-wrap {
-      position: relative; cursor: pointer; flex-shrink: 0;
+    .info-profile-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px 20px;
+      box-shadow: var(--shadow); text-align: center;
     }
-    .perfil-avatar-wrap:hover .perfil-avatar-overlay { opacity: 1; }
-    .perfil-avatar-overlay {
+    .info-avatar-wrap {
+      position: relative; width: 96px; height: 96px;
+      margin: 0 auto 14px; cursor: pointer; flex-shrink: 0;
+    }
+    .info-avatar-wrap:hover .info-avatar-overlay { opacity: 1; }
+    .info-avatar-overlay {
       position: absolute; inset: 0; border-radius: 50%;
       background: rgba(0,0,0,0.42);
       display: flex; align-items: center; justify-content: center;
       opacity: 0; transition: opacity 150ms;
-      color: #fff; font-size: 1.1rem; pointer-events: none;
+      color: #fff; font-size: 1.2rem; pointer-events: none;
     }
-    .perfil-avatar {
-      width: 72px; height: 72px; border-radius: 50%;
-      background: var(--primary-light); color: var(--primary);
+    .info-avatar {
+      width: 96px; height: 96px; border-radius: 50%;
+      background: var(--primary); color: #fff;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.4rem; font-weight: 700;
-      overflow: hidden; border: 3px solid var(--border);
+      font-size: 2rem; font-weight: 700; overflow: hidden;
       font-family: 'Plus Jakarta Sans','Inter',sans-serif;
     }
-    .perfil-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .perfil-nome {
-      font-size: 1.25rem; font-weight: 700; color: var(--dark);
+    .info-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .info-profile-name {
+      font-size: 1.05rem; font-weight: 700; color: var(--dark); margin-bottom: 3px;
       font-family: 'Plus Jakarta Sans','Inter',sans-serif;
-      margin: 0 0 4px;
     }
-    .perfil-meta { font-size: 0.85rem; color: var(--muted); margin: 0; }
-    .perfil-header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .info-profile-role { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; }
+    .info-alterar-foto-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 7px 16px; border-radius: 99px;
+      font-size: 0.82rem; font-weight: 500; font-family: inherit;
+      background: var(--surface); color: var(--text);
+      border: 1.5px solid var(--border); cursor: pointer;
+      transition: border-color 150ms, color 150ms, background 150ms; margin-bottom: 20px;
+    }
+    .info-alterar-foto-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+    .info-stats { border-top: 1px solid var(--border); padding-top: 16px; text-align: left; }
+    .info-stat-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; color: var(--muted); padding: 4px 0;
+    }
+    .info-form-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+      box-shadow: var(--shadow);
+    }
+    .btn-perfil-save {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 11px 26px; border-radius: 99px; border: none;
+      background: var(--primary); color: #fff;
+      font-size: 0.875rem; font-weight: 700; font-family: inherit;
+      cursor: pointer; transition: background 150ms; margin-top: 8px;
+    }
+    .btn-perfil-save:hover { background: var(--primary-dark); }
+    .info-form-card .form-group label { text-transform: none; letter-spacing: 0; color: var(--text); }
+    @media (max-width: 680px) { .info-layout { grid-template-columns: 1fr; } }
 
     .settings-card {
       background: var(--surface);
@@ -167,19 +200,9 @@
   </header>
 </div>
 
-<div class="perfil-header">
-  <div class="perfil-avatar-wrap" onclick="document.getElementById('avatar-input').click()" title="Alterar foto">
-    <div class="perfil-avatar" id="perfil-avatar">?</div>
-    <div class="perfil-avatar-overlay"><i class="bi bi-camera-fill"></i></div>
-    <input type="file" id="avatar-input" accept=".jpg,.jpeg,.png" style="display:none" onchange="uploadAvatar(this)">
-  </div>
-  <div>
-    <p class="perfil-nome" id="perfil-nome"><span class="skeleton" style="width:160px;height:18px;display:inline-block"></span></p>
-    <p class="perfil-meta" id="perfil-meta"><span class="skeleton" style="width:200px;height:12px;display:inline-block"></span></p>
-  </div>
-  <div class="perfil-header-right">
-    <span class="badge" id="perfil-role-badge"></span>
-  </div>
+<div class="perfil-page-head">
+  <h1>O meu perfil</h1>
+  <p>Gere as tuas informações e preferências</p>
 </div>
 
 <div class="tabs" role="tablist">
@@ -204,30 +227,50 @@
 </div>
 
 <div id="aba-info" class="tab-panel active" role="tabpanel">
-  <div class="settings-card">
-    <div class="settings-card-head">
-      <h3><i class="bi bi-person-fill" style="color:var(--primary)"></i> Informações pessoais</h3>
-      <p>O teu nome e contacto são visíveis para os outros utilizadores nas reservas.</p>
+  <div class="info-layout">
+    <div class="info-profile-card">
+      <div class="info-avatar-wrap" onclick="document.getElementById('avatar-input').click()" title="Alterar foto">
+        <div class="info-avatar" id="perfil-avatar">
+          <span class="skeleton" style="width:100%;height:100%;border-radius:50%"></span>
+        </div>
+        <div class="info-avatar-overlay"><i class="bi bi-camera-fill"></i></div>
+        <input type="file" id="avatar-input" accept=".jpg,.jpeg,.png" style="display:none" onchange="uploadAvatar(this)">
+      </div>
+      <div class="info-profile-name" id="perfil-nome">
+        <span class="skeleton" style="width:130px;height:16px;display:inline-block;border-radius:5px"></span>
+      </div>
+      <div class="info-profile-role" id="perfil-role-text">
+        <span class="skeleton" style="width:80px;height:12px;display:inline-block;border-radius:4px"></span>
+      </div>
+      <button type="button" class="info-alterar-foto-btn" onclick="document.getElementById('avatar-input').click()">
+        <i class="bi bi-camera"></i> Alterar foto
+      </button>
+      <div class="info-stats" id="perfil-stats"></div>
     </div>
-    <form onsubmit="guardarPerfil(event)">
-      <div class="settings-card-body">
-        <div class="form-group">
-          <label>Nome completo</label>
-          <input type="text" id="full_name" required style="max-width:400px" />
+
+    <div class="info-form-card">
+      <form onsubmit="guardarPerfil(event)">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Nome</label>
+            <input type="text" id="first_name" required />
+          </div>
+          <div class="form-group">
+            <label>Apelido</label>
+            <input type="text" id="last_name" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Email</label>
+            <input type="email" id="email" disabled />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Telemóvel</label>
+            <input type="tel" id="phone" />
+          </div>
         </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="email" disabled style="max-width:400px" />
-        </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label>Telemóvel</label>
-          <input type="tel" id="phone" style="max-width:240px" />
-        </div>
-      </div>
-      <div class="settings-card-footer">
-        <button type="submit"><i class="bi bi-floppy-fill"></i> Guardar alterações</button>
-      </div>
-    </form>
+        <button type="submit" class="btn-perfil-save"><i class="bi bi-check-lg"></i> Guardar alterações</button>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -432,9 +475,12 @@
     const { user } = await me.json();
 
     document.getElementById('nome-user').textContent = user.full_name;
-    document.getElementById('full_name').value = user.full_name;
-    document.getElementById('email').value     = user.email;
-    document.getElementById('phone').value     = user.phone || '';
+
+    const parts = user.full_name.split(' ');
+    document.getElementById('first_name').value = parts[0] || '';
+    document.getElementById('last_name').value  = parts.slice(1).join(' ') || '';
+    document.getElementById('email').value      = user.email;
+    document.getElementById('phone').value      = user.phone || '';
 
     const initStr  = user.full_name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
     const avatarEl = document.getElementById('perfil-avatar');
@@ -443,14 +489,9 @@
     } else {
       avatarEl.textContent = initStr;
     }
-    document.getElementById('perfil-nome').textContent = user.full_name;
-    document.getElementById('perfil-meta').textContent = user.email;
-
-    const roleMap   = { PASSENGER: 'Passageiro', DRIVER: 'Condutor', BOTH: 'Condutor & Passageiro', ADMIN: 'Administrador' };
-    const roleBadge = { PASSENGER: 'badge-completed', DRIVER: 'badge-active', BOTH: 'badge-confirmed', ADMIN: 'badge-pending' };
-    const badge = document.getElementById('perfil-role-badge');
-    badge.textContent = roleMap[user.role] || user.role;
-    badge.className   = `badge ${roleBadge[user.role] || 'badge-archived'}`;
+    document.getElementById('perfil-nome').textContent     = user.full_name;
+    const roleMap = { PASSENGER: 'Passageiro', DRIVER: 'Condutor', BOTH: 'Condutor & Passageiro', ADMIN: 'Administrador' };
+    document.getElementById('perfil-role-text').textContent = roleMap[user.role] || user.role;
 
     if (user.role === 'DRIVER' || user.role === 'BOTH') {
       ajustarNavCondutor(user.role);
@@ -475,26 +516,51 @@
     if (user.role === 'PASSENGER') {
       document.getElementById('nav-publicar').style.display = 'none';
     }
+    carregarBadgeReservas();
+    carregarStatsPerfil(user.role, user.created_at);
 
     if (window.location.hash === '#documentos' && isCondutor) {
       mostrarAba({ preventDefault: () => {} }, 'aba-documentos');
     }
   }
 
+  async function carregarStatsPerfil(role, createdAt) {
+    const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const d     = createdAt ? new Date(createdAt) : null;
+    const desde = d ? `${MESES[d.getMonth()]} ${d.getFullYear()}` : '—';
+    const div   = document.getElementById('perfil-stats');
+
+    div.innerHTML = `<div class="info-stat-row"><i class="bi bi-calendar3"></i> Membro desde ${desde}</div>`;
+
+    try {
+      if (role === 'DRIVER' || role === 'BOTH' || role === 'ADMIN') {
+        const s = await fetch('../backend/routes/stats.php').then(r => r.json());
+        if (s.success) {
+          div.innerHTML += `<div class="info-stat-row"><i class="bi bi-car-front-fill"></i> ${s.stats.total_trips || 0} viagens realizadas</div>`;
+          if (s.stats.avg_rating) div.innerHTML += `<div class="info-stat-row"><i class="bi bi-star-fill" style="color:var(--warning)"></i> Avaliação: ${Number(s.stats.avg_rating).toFixed(1)}</div>`;
+        }
+      } else {
+        const b         = await fetch('../backend/bookings/index.php').then(r => r.json());
+        const completed = (b.bookings || []).filter(bk => bk.status === 'COMPLETED').length;
+        div.innerHTML  += `<div class="info-stat-row"><i class="bi bi-ticket-perforated-fill"></i> ${completed} viagens realizadas</div>`;
+      }
+    } catch {}
+  }
+
   async function guardarPerfil(e) {
     e.preventDefault();
+    const first     = document.getElementById('first_name').value.trim();
+    const last      = document.getElementById('last_name').value.trim();
+    const full_name = last ? `${first} ${last}` : first;
     const res  = await fetch('../backend/users/profile.php', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        full_name: document.getElementById('full_name').value.trim(),
-        phone:     document.getElementById('phone').value.trim()
-      })
+      body: JSON.stringify({ full_name, phone: document.getElementById('phone').value.trim() })
     });
     const data = await res.json();
     toast(data.message, data.success ? 'success' : 'danger');
     if (data.success) {
-      document.getElementById('nome-user').textContent = data.user.full_name;
+      document.getElementById('nome-user').textContent  = data.user.full_name;
       document.getElementById('perfil-nome').textContent = data.user.full_name;
     }
   }
@@ -657,6 +723,10 @@
 
   init();
 </script>
+
+<footer>
+  <small>&copy; 2026 Boleia.pt — <a href="sobre.html">Sobre nós</a> | <a href="#">Termos de Uso</a> | <a href="#">Privacidade</a> | <a href="contacto.html">Contacto</a></small>
+</footer>
 
 </body>
 </html>

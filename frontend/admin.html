@@ -60,6 +60,10 @@
     .admin-sidebar-back:hover { background: var(--bg); color: var(--dark); text-decoration: none; }
 
     
+    .admin-page-head { margin-bottom: 28px; }
+    .admin-page-head h1 { font-size: 1.75rem; font-weight: 800; color: var(--dark); margin-bottom: 4px; font-family: 'Plus Jakarta Sans','Inter',sans-serif; letter-spacing: -0.03em; }
+    .admin-page-head p  { font-size: 0.875rem; color: var(--muted); margin: 0; }
+
     .admin-stats-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -70,17 +74,27 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 26px 28px;
+      padding: 22px 24px;
       box-shadow: var(--shadow);
+      display: flex; align-items: center; gap: 18px;
     }
+    .asc-icon {
+      width: 52px; height: 52px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.35rem; flex-shrink: 0;
+    }
+    .asc-icon-primary { background: var(--primary-light); color: var(--primary); }
+    .asc-icon-success { background: var(--success-light); color: var(--success); }
+    .asc-icon-warning { background: var(--warning-light); color: var(--warning); }
     .asc-label {
-      font-size: 0.875rem; font-weight: 600; color: var(--success);
-      margin-bottom: 10px; display: block;
+      font-size: 0.78rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 4px; display: block;
     }
     .asc-value {
-      font-size: 2.6rem; font-weight: 800;
+      font-size: 2rem; font-weight: 800;
       font-family: 'Plus Jakarta Sans','Inter',sans-serif;
-      line-height: 1; color: var(--success);
+      line-height: 1; color: var(--dark);
     }
     .asc-value-dark { color: var(--dark); }
 
@@ -266,6 +280,11 @@
   </header>
 </div>
 
+<div class="admin-page-head">
+  <h1><i class="bi bi-shield-lock-fill" style="color:var(--primary);font-size:1.5rem"></i> Painel de Administração</h1>
+  <p>Gestão de utilizadores, condutores, documentos e atividade da plataforma.</p>
+</div>
+
 <div class="admin-layout">
 
   
@@ -289,6 +308,10 @@
         </a>
         <a href="#" onclick="mostrarAba(event,'aba-atividade')" class="admin-nav-item" id="nav-aba-atividade">
           <i class="bi bi-activity"></i> Atividade
+        </a>
+        <a href="#" onclick="mostrarAba(event,'aba-reclamacoes')" class="admin-nav-item" id="nav-aba-reclamacoes">
+          <i class="bi bi-flag-fill"></i> Reclamações
+          <span class="admin-nav-badge" id="badge-reclamacoes"></span>
         </a>
       </nav>
     </div>
@@ -354,6 +377,10 @@
       <div id="atividade-conteudo"><p>A carregar...</p></div>
     </div>
 
+    <div id="aba-reclamacoes" style="display:none">
+      <div id="reclamacoes-conteudo"><p>A carregar...</p></div>
+    </div>
+
   </div>
 </div>
 
@@ -367,15 +394,16 @@
 
   function mostrarAba(e, id) {
     e.preventDefault();
-    const abas = ['aba-stats','aba-utilizadores','aba-condutores','aba-documentos','aba-atividade'];
+    const abas = ['aba-stats','aba-utilizadores','aba-condutores','aba-documentos','aba-atividade','aba-reclamacoes'];
     abas.forEach(a => document.getElementById(a).style.display = (a === id) ? '' : 'none');
     document.querySelectorAll('.admin-nav-item').forEach(el => el.classList.remove('active'));
     const navItem = document.getElementById(`nav-${id}`);
     if (navItem) navItem.classList.add('active');
-    if (id === 'aba-utilizadores') carregarUtilizadores(1);
-    if (id === 'aba-condutores')   carregarCondutores();
-    if (id === 'aba-documentos')   carregarDocumentos();
-    if (id === 'aba-atividade')    carregarAtividade();
+    if (id === 'aba-utilizadores')  carregarUtilizadores(1);
+    if (id === 'aba-condutores')    carregarCondutores();
+    if (id === 'aba-documentos')    carregarDocumentos();
+    if (id === 'aba-atividade')     carregarAtividade();
+    if (id === 'aba-reclamacoes')   carregarReclamacoes();
   }
 
   async function init() {
@@ -383,7 +411,7 @@
     if (!me.ok) { window.location.href = 'login.html'; return; }
     const { user } = await me.json();
     if (user.role !== 'ADMIN') { alert('Acesso negado.'); window.location.href = 'dashboard.html'; return; }
-    await Promise.all([carregarStats(), carregarRecentUsers()]);
+    await Promise.all([carregarStats(), carregarRecentUsers(), carregarBadgeReclamacoes()]);
   }
 
   async function carregarStats() {
@@ -407,16 +435,16 @@
 
     div.innerHTML = `
       <div class="admin-stat-card">
-        <span class="asc-label">Total Utilizadores</span>
-        <div class="asc-value">${Number(s.total_users || 0).toLocaleString('pt-PT')}</div>
+        <div class="asc-icon asc-icon-primary"><i class="bi bi-people-fill"></i></div>
+        <div><span class="asc-label">Utilizadores</span><div class="asc-value">${Number(s.total_users || 0).toLocaleString('pt-PT')}</div></div>
       </div>
       <div class="admin-stat-card">
-        <span class="asc-label">Total Reservas</span>
-        <div class="asc-value">${Number(s.total_bookings || 0).toLocaleString('pt-PT')}</div>
+        <div class="asc-icon asc-icon-success"><i class="bi bi-ticket-perforated-fill"></i></div>
+        <div><span class="asc-label">Reservas</span><div class="asc-value">${Number(s.total_bookings || 0).toLocaleString('pt-PT')}</div></div>
       </div>
       <div class="admin-stat-card">
-        <span class="asc-label">Verificações Pendentes</span>
-        <div class="asc-value asc-value-dark">${s.pending_verification || 0}</div>
+        <div class="asc-icon asc-icon-warning"><i class="bi bi-hourglass-split"></i></div>
+        <div><span class="asc-label">Verificações Pendentes</span><div class="asc-value">${s.pending_verification || 0}</div></div>
       </div>`;
     div.className = 'admin-stats-grid';
   }
@@ -690,6 +718,99 @@
       </div>`;
   }
 
+  async function carregarBadgeReclamacoes() {
+    try {
+      const data = await fetch('../backend/complaints/index.php?status=PENDING').then(r => r.json());
+      const n    = (data.complaints || []).length;
+      const el   = document.getElementById('badge-reclamacoes');
+      if (n > 0) { el.textContent = n; el.style.display = 'inline-block'; }
+    } catch {}
+  }
+
+  const TYPE_PT = { NO_SHOW: 'Não apareceu', BEHAVIOR: 'Comportamento', PAYMENT: 'Pagamento', OTHER: 'Outro' };
+  const CPL_STATUS_PT  = { PENDING: 'Pendente', REVIEWED: 'Em análise', CLOSED: 'Encerrada' };
+  const CPL_STATUS_BADGE = { PENDING: 'badge-pending', REVIEWED: 'badge-aguardar', CLOSED: 'badge-completed' };
+
+  async function carregarReclamacoes() {
+    const div  = document.getElementById('reclamacoes-conteudo');
+    div.innerHTML = '<p style="color:var(--muted)">A carregar...</p>';
+    try {
+      const data       = await fetch('../backend/complaints/index.php').then(r => r.json());
+      const complaints = data.complaints || [];
+
+      if (complaints.length === 0) {
+        div.innerHTML = '<div class="empty-state"><i class="bi bi-flag"></i><p>Sem reclamações registadas.</p></div>';
+        return;
+      }
+
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <h2 style="margin:0"><i class="bi bi-flag-fill"></i> Reclamações</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" onclick="filtrarReclamacoes('')"     class="btn-ver" id="cpl-f-all">Todas</button>
+            <button type="button" onclick="filtrarReclamacoes('PENDING')"  class="btn-ver" id="cpl-f-pending">Pendentes</button>
+            <button type="button" onclick="filtrarReclamacoes('REVIEWED')" class="btn-ver" id="cpl-f-reviewed">Em análise</button>
+            <button type="button" onclick="filtrarReclamacoes('CLOSED')"   class="btn-ver" id="cpl-f-closed">Encerradas</button>
+          </div>
+        </div>
+        <div id="cpl-lista">
+          ${renderReclamacoes(complaints)}
+        </div>`;
+
+      window._allComplaints = complaints;
+    } catch (e) {
+      div.innerHTML = `<div class="alert alert-danger"><i class="bi bi-x-circle-fill"></i> Erro ao carregar reclamações.</div>`;
+    }
+  }
+
+  function renderReclamacoes(list) {
+    if (list.length === 0) return '<div class="empty-state" style="padding:20px 0"><i class="bi bi-flag"></i><p>Sem reclamações neste filtro.</p></div>';
+    return `<div class="recent-users-card"><table class="ru-table"><thead><tr>
+        <th>Reclamante</th><th>Reclamado</th><th>Tipo</th><th>Descrição</th><th>Data</th><th>Estado</th><th>Ação</th>
+      </tr></thead><tbody>
+      ${list.map(c => `<tr>
+        <td>
+          <div style="font-weight:600;color:var(--dark);font-size:0.875rem">${esc(c.reporter_name)}</div>
+          <div style="font-size:0.75rem;color:var(--muted)">${esc(c.reporter_email)}</div>
+        </td>
+        <td>
+          <div style="font-weight:600;color:var(--dark);font-size:0.875rem">${esc(c.reported_name)}</div>
+          <div style="font-size:0.75rem;color:var(--muted)">${esc(c.reported_email)}</div>
+        </td>
+        <td><span class="badge badge-pending">${TYPE_PT[c.type] || c.type}</span></td>
+        <td style="max-width:200px;font-size:0.82rem;color:var(--muted)">${esc(c.description.slice(0,80))}${c.description.length > 80 ? '…' : ''}</td>
+        <td style="white-space:nowrap;color:var(--muted);font-size:0.82rem">${fmtLong(c.created_at?.slice(0,10))}</td>
+        <td><span class="badge ${CPL_STATUS_BADGE[c.status] || 'badge-pending'}">${CPL_STATUS_PT[c.status] || c.status}</span></td>
+        <td style="white-space:nowrap">
+          ${c.status !== 'REVIEWED' ? `<a href="#" onclick="updateCplStatus(event,'${c.id}','REVIEWED')" class="action-link action-ok" style="margin-right:10px"><i class="bi bi-eye-fill"></i> Analisar</a>` : ''}
+          ${c.status !== 'CLOSED'   ? `<a href="#" onclick="updateCplStatus(event,'${c.id}','CLOSED')"   class="action-link" style="color:var(--muted)"><i class="bi bi-check2-all"></i> Encerrar</a>` : ''}
+        </td>
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  }
+
+  function filtrarReclamacoes(status) {
+    const list = status ? (window._allComplaints || []).filter(c => c.status === status) : (window._allComplaints || []);
+    document.getElementById('cpl-lista').innerHTML = renderReclamacoes(list);
+  }
+
+  async function updateCplStatus(e, id, status) {
+    e.preventDefault();
+    const res  = await fetch(`../backend/complaints/update_status.php?id=${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(data.message, 'success');
+      await carregarReclamacoes();
+      await carregarBadgeReclamacoes();
+    } else {
+      toast(data.message || 'Erro.', 'danger');
+    }
+  }
+
   const _MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   function fmtLong(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${parseInt(dd)} ${_MESES[parseInt(m)-1]} ${y}`; }
   function fmt(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; }
@@ -697,6 +818,10 @@
 
   init();
 </script>
+
+<footer>
+  <small>&copy; 2026 Boleia.pt — <a href="sobre.html">Sobre nós</a> | <a href="#">Termos de Uso</a> | <a href="#">Privacidade</a> | <a href="contacto.html">Contacto</a></small>
+</footer>
 
 </body>
 </html>

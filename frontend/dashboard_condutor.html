@@ -78,8 +78,7 @@
       line-height: 1; letter-spacing: -0.02em;
     }
 
-    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
-    .tab-btn.active .tab-count { background: var(--primary); }
+
     .tab-count-urgent { background: var(--danger) !important; color: #fff !important; }
 
     .rota-card {
@@ -176,6 +175,14 @@
     .veiculo-label { color: var(--muted); font-weight: 500; }
     .veiculo-value { font-weight: 600; color: var(--dark); }
 
+    .dash-cta {
+      background: linear-gradient(135deg, var(--dark) 0%, #1e3a8a 100%);
+      border-radius: 16px; padding: 22px 28px; margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    .dash-cta-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 3px; font-family: 'Plus Jakarta Sans','Inter',sans-serif; }
+    .dash-cta-sub   { font-size: 0.82rem; color: rgba(255,255,255,0.65); }
+
     @media (max-width: 640px) {
       .driver-stats-grid { grid-template-columns: 1fr; }
       .driver-profile-card { padding: 16px 18px; }
@@ -210,13 +217,21 @@
   <div class="driver-profile-left">
     <div class="driver-avatar" id="dash-avatar">?</div>
     <div>
-      <p class="driver-name" id="welcome-title">A carregar...</p>
+      <p class="driver-name" id="welcome-title"><span class="skeleton" style="width:200px;height:24px;display:inline-block;border-radius:6px"></span></p>
       <p class="driver-meta" id="driver-meta">
         <span class="skeleton" style="width:200px;height:13px;display:inline-block"></span>
       </p>
     </div>
   </div>
   <a href="perfil.html" class="btn-edit-perfil"><i class="bi bi-pencil-square"></i> Editar Perfil</a>
+</div>
+
+<div class="dash-cta">
+  <div>
+    <p class="dash-cta-title">Aumenta os teus ganhos</p>
+    <p class="dash-cta-sub">Publica uma nova rota e chega a mais passageiros.</p>
+  </div>
+  <a href="publicar.html" class="nav-btn" style="flex-shrink:0"><i class="bi bi-plus-circle-fill"></i> Nova rota</a>
 </div>
 
 <div class="driver-stats-grid">
@@ -255,9 +270,8 @@
 </div>
 
 <div id="aba-rotas" class="tab-panel active" role="tabpanel">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+  <div style="margin-bottom:14px">
     <span style="font-size:0.82rem;color:var(--muted)">As tuas rotas ativas e agendadas</span>
-    <a href="publicar.html" class="btn-sm btn-info"><i class="bi bi-plus-circle"></i> Nova rota</a>
   </div>
   <div id="rotas-lista"></div>
 </div>
@@ -348,6 +362,7 @@
       carregarConfirmados(),
       carregarHistorico(),
     ]);
+    carregarBadgeReservas();
   }
 
   async function carregarStats() {
@@ -465,7 +480,7 @@
         </div>
         <div class="pax-btns">
           <a href="#" onclick="atualizarEstado(event,'${b.id}','CONFIRMED')" class="btn-sm btn-ok"><i class="bi bi-check-circle-fill"></i> Aceitar</a>
-          <a href="#" onclick="atualizarEstado(event,'${b.id}','CANCELLED_DRIVER')" class="btn-sm btn-danger"><i class="bi bi-x-circle-fill"></i> Recusar</a>
+          <a href="#" onclick="recusarComMotivo(event,'${b.id}')" class="btn-sm btn-danger"><i class="bi bi-x-circle-fill"></i> Recusar</a>
         </div>
       </div>`;
     }).join('');
@@ -562,6 +577,35 @@
       </div>`;
   }
 
+  function recusarComMotivo(e, id) {
+    e.preventDefault();
+    document.getElementById('recusar-id').value    = id;
+    document.getElementById('recusar-motivo').value = '';
+    document.getElementById('modal-recusar').style.display = 'flex';
+  }
+  function fecharRecusar() { document.getElementById('modal-recusar').style.display = 'none'; }
+  function fecharRecusarOverlay(e) { if (e.target === document.getElementById('modal-recusar')) fecharRecusar(); }
+  async function confirmarRecusar() {
+    const id    = document.getElementById('recusar-id').value;
+    const nota  = document.getElementById('recusar-motivo').value.trim() || null;
+    const btn   = document.getElementById('btn-confirmar-recusar');
+    btnLoad(btn, true, 'A recusar...');
+    const res   = await fetch(`../backend/bookings/update_status.php?id=${id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status: 'CANCELLED_DRIVER', driver_note: nota })
+    });
+    const data  = await res.json();
+    btnLoad(btn, false);
+    if (data.success) {
+      fecharRecusar();
+      toast('Reserva recusada.', 'warning');
+      await Promise.all([carregarPendentes(), carregarConfirmados()]);
+    } else {
+      toast(data.message || 'Erro ao recusar.', 'danger');
+    }
+  }
+
   async function atualizarEstado(e, id, status) {
     e.preventDefault();
     const res  = await fetch(`../backend/bookings/update_status.php?id=${id}`, {
@@ -654,6 +698,24 @@
 
   init();
 </script>
+
+<div id="modal-recusar" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px" onclick="fecharRecusarOverlay(event)">
+  <div style="background:var(--surface);border-radius:20px;padding:28px;max-width:440px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.18);position:relative">
+    <button onclick="fecharRecusar()" style="position:absolute;top:14px;right:14px;background:var(--bg);border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:0.9rem"><i class="bi bi-x-lg"></i></button>
+    <p style="font-size:1.1rem;font-weight:700;color:var(--dark);margin:0 0 4px;font-family:'Plus Jakarta Sans','Inter',sans-serif"><i class="bi bi-x-circle-fill" style="color:var(--danger)"></i> Recusar reserva</p>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:22px">Podes indicar um motivo ao passageiro (opcional).</p>
+    <input type="hidden" id="recusar-id" />
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--dark);margin-bottom:6px">Motivo <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+      <textarea id="recusar-motivo" rows="3" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;font-size:0.875rem;font-family:inherit;color:var(--text);background:var(--bg);outline:none;resize:vertical;box-sizing:border-box;transition:border-color 180ms" placeholder="Ex: Já não tenho lugares disponíveis, desculpa..."></textarea>
+    </div>
+    <button id="btn-confirmar-recusar" onclick="confirmarRecusar()" style="width:100%;padding:13px;border-radius:99px;border:none;background:var(--danger);color:#fff;font-size:0.9rem;font-weight:700;font-family:inherit;cursor:pointer;transition:background 150ms"><i class="bi bi-x-circle-fill"></i> Recusar reserva</button>
+  </div>
+</div>
+
+<footer>
+  <small>&copy; 2026 Boleia.pt — <a href="sobre.html">Sobre nós</a> | <a href="#">Termos de Uso</a> | <a href="#">Privacidade</a> | <a href="contacto.html">Contacto</a></small>
+</footer>
 
 </body>
 </html>

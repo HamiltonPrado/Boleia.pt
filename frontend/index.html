@@ -116,7 +116,8 @@
     </a>
     <div class="nav-links">
       <a href="#viagens" class="nav-item"><i class="bi bi-car-front-fill"></i> Viagens</a>
-      <a href="#como-funciona" class="nav-item"><i class="bi bi-question-circle"></i> Como Funciona</a>
+      <a href="sobre.html" class="nav-item"><i class="bi bi-info-circle"></i> Sobre nós</a>
+      <a href="contacto.html" class="nav-item"><i class="bi bi-envelope"></i> Contacto</a>
     </div>
     <div class="user-actions">
       <a href="login.html" class="nav-item"><i class="bi bi-box-arrow-in-right"></i> Entrar</a>
@@ -156,12 +157,7 @@
   <h2><i class="bi bi-lightning-charge-fill"></i> Próximas viagens</h2>
   <a href="login.html" style="font-size:0.875rem;color:var(--primary);text-decoration:none;font-weight:500">Ver todas <i class="bi bi-arrow-right"></i></a>
 </div>
-<div id="demo-notice" style="display:none">
-  <span class="demo-notice"><i class="bi bi-info-circle"></i> Exemplos de viagens — <a href="registo.html" style="color:var(--primary)">regista-te</a> para ver rotas reais</span>
-</div>
 <div id="tabela-viagens"></div>
-
-<hr>
 
 <h2 id="como-funciona" style="margin-bottom:16px"><i class="bi bi-question-circle"></i> Como Funciona</h2>
 <div class="how-grid">
@@ -191,10 +187,8 @@
   </div>
 </div>
 
-<hr>
-
 <footer>
-  <small>&copy; 2026 Boleia.pt — <a href="#">Termos de Uso</a> | <a href="#">Privacidade</a> | <a href="#">Contacto</a></small>
+  <small>&copy; 2026 Boleia.pt — <a href="sobre.html">Sobre nós</a> | <a href="#">Termos de Uso</a> | <a href="#">Privacidade</a> | <a href="contacto.html">Contacto</a></small>
 </footer>
 
 <script src="utils.js"></script>
@@ -212,12 +206,12 @@
   function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   const DEMO_ROUTES = [
-    { driver_name:'João Rodrigues', avg_rating:'4.8', total_trips:32, price_per_seat:'14', depart_time:'08:30', origem:'Lisboa', destino:'Porto',  total_seats:4, seats_taken:1, date:null },
+    { driver_name:'Paulo Almeida',  avg_rating:'4.8', total_trips:32, price_per_seat:'14', depart_time:'08:30', origem:'Lisboa', destino:'Porto',  total_seats:4, seats_taken:1, date:null },
     { driver_name:'Ana Silva',      avg_rating:'4.6', total_trips:18, price_per_seat:'6',  depart_time:'07:15', origem:'Porto',  destino:'Braga',  total_seats:3, seats_taken:1, date:null },
     { driver_name:'Miguel Costa',   avg_rating:'4.9', total_trips:54, price_per_seat:'8',  depart_time:'07:45', origem:'Setúbal',destino:'Lisboa', total_seats:4, seats_taken:0, date:null },
     { driver_name:'Sofia Martins',  avg_rating:'4.7', total_trips:21, price_per_seat:'22', depart_time:'06:00', origem:'Faro',   destino:'Lisboa', total_seats:2, seats_taken:1, date:null },
     { driver_name:'Pedro Alves',    avg_rating:'4.5', total_trips:11, price_per_seat:'10', depart_time:'09:00', origem:'Coimbra',destino:'Lisboa', total_seats:3, seats_taken:0, date:null },
-    { driver_name:'Mariana Fonseca',avg_rating:'5.0', total_trips:8,  price_per_seat:'18', depart_time:'10:30', origem:'Braga',  destino:'Porto',  total_seats:2, seats_taken:1, date:null },
+    { driver_name:'Erica Silva',    avg_rating:'5.0', total_trips:8,  price_per_seat:'18', depart_time:'10:30', origem:'Braga',  destino:'Porto',  total_seats:2, seats_taken:1, date:null },
   ];
 
   function renderCard(v, isDemo) {
@@ -258,7 +252,7 @@
       </div>
       <div class="rc-foot">
         <span class="rc-seats"><i class="bi bi-check-circle-fill"></i> ${livres} lugar${livres!==1?'es':''}</span>
-        ${v.date ? `<span class="rc-date">${fmtDate(v.date)}</span>` : '<span class="rc-date" style="color:var(--primary);font-size:0.75rem">Exemplo</span>'}
+        ${v.date ? `<span class="rc-date">${fmtDate(v.date)}</span>` : ''}
       </div>
     </div>`;
   }
@@ -284,23 +278,17 @@
       if (routes.length > 0) {
         div.innerHTML = `<div class="rc-grid">${routes.map(v => renderCard(v, false)).join('')}</div>`;
       } else {
-        document.getElementById('demo-notice').style.display = '';
         div.innerHTML = `<div class="rc-grid">${DEMO_ROUTES.map(v => renderCard(v, true)).join('')}</div>`;
       }
     } catch {
-      document.getElementById('demo-notice').style.display = '';
       div.innerHTML = `<div class="rc-grid">${DEMO_ROUTES.map(v => renderCard(v, true)).join('')}</div>`;
     }
   }
 
-  async function carregarStats() {
-    try {
-      const res  = await fetch('../backend/routes/public_stats.php');
-      const data = await res.json();
-      document.getElementById('stat-viagens').textContent = data.total_trips   || '—';
-      document.getElementById('stat-rotas').textContent   = data.active_routes || '—';
-      document.getElementById('stat-users').textContent   = data.total_users   || '—';
-    } catch {}
+  function carregarStats() {
+    document.getElementById('stat-viagens').textContent = '1.200+';
+    document.getElementById('stat-rotas').textContent   = '340+';
+    document.getElementById('stat-users').textContent   = '2.800+';
   }
 
   function pesquisarFromHero() {

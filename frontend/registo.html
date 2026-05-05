@@ -6,6 +6,46 @@
   <title>Boleia.pt — Registo</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+<style>
+  .role-selector {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 2px;
+  }
+  .role-opt input { display: none; }
+  .role-opt span {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 12px 8px; border-radius: 12px; border: 1.5px solid var(--border);
+    font-size: 0.82rem; font-weight: 600; color: var(--muted);
+    cursor: pointer; transition: border-color 150ms, background 150ms, color 150ms;
+    text-align: center;
+  }
+  .role-opt span i { font-size: 1.2rem; }
+  .role-opt input:checked + span {
+    border-color: var(--primary); background: var(--primary-light); color: var(--primary);
+  }
+  .role-opt span:hover { border-color: var(--primary); color: var(--primary); }
+
+  .carro-fields {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 320ms ease, opacity 280ms ease;
+    opacity: 0;
+  }
+  .carro-fields.visible {
+    max-height: 300px;
+    opacity: 1;
+  }
+  .carro-fields .carro-inner {
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    margin-top: 4px;
+  }
+  .carro-fields .carro-label {
+    font-size: 0.72rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .carro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+</style>
 </head>
 <body>
 
@@ -15,9 +55,7 @@
       <div class="brand-icon"><i class="bi bi-car-front-fill"></i></div>
       Boleia.pt
     </a>
-    <div class="nav-links">
-      <a href="index.html#como-funciona" class="nav-item"><i class="bi bi-question-circle"></i> Como Funciona</a>
-    </div>
+    <div class="nav-links"></div>
     <div class="user-actions">
       <a href="login.html" class="nav-item"><i class="bi bi-box-arrow-in-right"></i> Entrar</a>
     </div>
@@ -52,6 +90,48 @@
       <input type="password" id="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required />
     </div>
 
+    <div class="form-group">
+      <label>Quero usar a plataforma como</label>
+      <div class="role-selector">
+        <label class="role-opt">
+          <input type="radio" name="role" value="PASSENGER" checked />
+          <span><i class="bi bi-ticket-perforated"></i> Passageiro</span>
+        </label>
+        <label class="role-opt">
+          <input type="radio" name="role" value="DRIVER" />
+          <span><i class="bi bi-car-front-fill"></i> Condutor</span>
+        </label>
+        <label class="role-opt">
+          <input type="radio" name="role" value="BOTH" />
+          <span><i class="bi bi-arrow-left-right"></i> Ambos</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="carro-fields" id="carro-fields">
+      <div class="carro-inner">
+        <p class="carro-label"><i class="bi bi-car-front-fill"></i> Dados do veículo <span style="font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></p>
+        <div class="carro-grid">
+          <div class="form-group" style="margin-bottom:0">
+            <label>Marca</label>
+            <input type="text" id="car_make" placeholder="Ex: Volkswagen" autocomplete="off" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Modelo</label>
+            <input type="text" id="car_model" placeholder="Ex: Golf" autocomplete="off" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Ano</label>
+            <input type="number" id="car_year" placeholder="Ex: 2020" min="1980" max="2030" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Matrícula</label>
+            <input type="text" id="car_plate" placeholder="Ex: AA-00-BB" autocomplete="off" />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="erro" class="alert alert-danger" style="display:none;text-align:left"></div>
 
     <button type="submit" class="btn-submit"><i class="bi bi-person-plus-fill"></i> Criar Conta</button>
@@ -62,6 +142,13 @@
 
 <script src="utils.js"></script>
 <script>
+  document.querySelectorAll('input[name="role"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isCondutor = ['DRIVER','BOTH'].includes(radio.value);
+      document.getElementById('carro-fields').classList.toggle('visible', isCondutor);
+    });
+  });
+
   async function registar(e) {
     e.preventDefault();
     const nome     = document.getElementById('nome').value.trim();
@@ -69,13 +156,23 @@
     const email    = document.getElementById('email').value.trim();
     const phone    = document.getElementById('telemovel').value.trim();
     const password = document.getElementById('password').value;
+    const role     = document.querySelector('input[name="role"]:checked').value;
     const erro     = document.getElementById('erro');
     erro.style.display = 'none';
+
+    const payload = { full_name: nome + ' ' + apelido, email, phone, password, role };
+
+    if (role === 'DRIVER' || role === 'BOTH') {
+      payload.car_make  = document.getElementById('car_make').value.trim()  || null;
+      payload.car_model = document.getElementById('car_model').value.trim() || null;
+      payload.car_year  = parseInt(document.getElementById('car_year').value) || null;
+      payload.car_plate = document.getElementById('car_plate').value.trim() || null;
+    }
 
     const res  = await fetch('../backend/auth/register.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ full_name: nome + ' ' + apelido, email, phone, password, role: 'PASSENGER' })
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
 
