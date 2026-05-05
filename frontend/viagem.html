@@ -21,6 +21,37 @@
       .viagem-right { position: static; }
     }
 
+    .seg-card {
+      background: #FFF7ED;
+      border: 1.5px solid #FED7AA;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+    }
+    .seg-card-header {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.8rem; font-weight: 700; color: #92400E;
+      text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px;
+    }
+    .seg-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-seg-share {
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 10px 16px; border-radius: 99px; border: none; cursor: pointer;
+      font-size: 0.82rem; font-weight: 600; font-family: inherit;
+      background: var(--primary); color: #fff;
+      transition: background 150ms; min-width: 130px;
+    }
+    .btn-seg-share:hover { background: var(--primary-dark); }
+    .btn-sos {
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 10px 16px; border-radius: 99px; border: none; cursor: pointer;
+      font-size: 0.82rem; font-weight: 700; font-family: inherit;
+      background: #DC2626; color: #fff;
+      transition: background 150ms; min-width: 100px; text-decoration: none;
+    }
+    .btn-sos:hover { background: #B91C1C; color: #fff; text-decoration: none; }
+    .seg-hint { font-size: 0.75rem; color: #92400E; margin-top: 10px; line-height: 1.5; }
+
     
     .viagem-route-header {
       background: var(--surface);
@@ -101,7 +132,6 @@
 </div>
 
 <div id="conteudo"><p>A carregar...</p></div>
-<div id="mapa" style="height:350px;margin-top:16px;display:none"></div>
 
 <a href="pesquisa.html" class="back-link" style="margin-top:28px;display:inline-flex"><i class="bi bi-arrow-left"></i> Voltar aos resultados</a>
 
@@ -137,14 +167,46 @@
     if (user.role === 'PASSENGER') {
       document.getElementById('nav-publicar').style.display = 'none';
     }
+    carregarBadgeReservas();
 
-    const raw = sessionStorage.getItem('viagem_atual');
-    if (!raw) {
-      document.getElementById('conteudo').innerHTML =
-        '<div class="empty-state"><i class="bi bi-search"></i><p>Nenhuma viagem selecionada.</p><a href="pesquisa.html" class="btn-sm btn-info"><i class="bi bi-search"></i> Pesquisar viagens</a></div>';
-      return;
+    const ocId = new URLSearchParams(location.search).get('oc');
+    if (ocId) {
+      try {
+        const r = await fetch(`../backend/routes/occurrence.php?id=${encodeURIComponent(ocId)}`);
+        const d = await r.json();
+        if (!d.success) {
+          document.getElementById('conteudo').innerHTML =
+            '<div class="empty-state"><i class="bi bi-x-circle"></i><p>Viagem não encontrada ou indisponível.</p><a href="pesquisa.html" class="btn-sm btn-info"><i class="bi bi-search"></i> Pesquisar viagens</a></div>';
+          return;
+        }
+        viagem = d.viagem;
+        if (viagem.stops && typeof viagem.stops === 'string') {
+          try { viagem.stops = JSON.parse(viagem.stops); } catch { viagem.stops = []; }
+        }
+        if (!Array.isArray(viagem.stops)) viagem.stops = [];
+      } catch (err) {
+        document.getElementById('conteudo').innerHTML =
+          '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Erro ao carregar a viagem. Tenta novamente.</p><a href="pesquisa.html" class="btn-sm btn-info"><i class="bi bi-search"></i> Pesquisar viagens</a></div>';
+        return;
+      }
+    } else {
+      const raw = sessionStorage.getItem('viagem_atual');
+      if (!raw) {
+        document.getElementById('conteudo').innerHTML =
+          '<div class="empty-state"><i class="bi bi-search"></i><p>Nenhuma viagem selecionada.</p><a href="pesquisa.html" class="btn-sm btn-info"><i class="bi bi-search"></i> Pesquisar viagens</a></div>';
+        return;
+      }
+      viagem = JSON.parse(raw);
+      try {
+        const bkRes = await fetch(`../backend/bookings/index.php`);
+        const bkData = await bkRes.json();
+        const ocId = viagem.occurrence_id;
+        const bk = (bkData.bookings || []).find(b =>
+          b.occurrence_id === ocId && !['CANCELLED_PASSENGER','CANCELLED_DRIVER'].includes(b.status)
+        );
+        viagem.user_booking = bk || null;
+      } catch { viagem.user_booking = null; }
     }
-    viagem = JSON.parse(raw);
 
     const stops   = typeof viagem.stops === 'string' ? JSON.parse(viagem.stops) : (viagem.stops || []);
     const origem  = (stops[0]?.address || '—').split(',')[0].trim();
@@ -218,9 +280,27 @@
           </div>
 
           ${paragens}
+
+          ${viagem.user_booking ? `
+          <div class="seg-card">
+            <div class="seg-card-header"><i class="bi bi-shield-fill-check"></i> Segurança</div>
+            <div class="seg-btns">
+              <button class="btn-seg-share" onclick="partilharDetalhes()">
+                <i class="bi bi-share-fill"></i> Partilhar viagem
+              </button>
+              <a href="tel:112" class="btn-sos">
+                <i class="bi bi-telephone-fill"></i> SOS 112
+              </a>
+            </div>
+            <p class="seg-hint">
+              <i class="bi bi-info-circle"></i>
+              Partilha os detalhes da viagem com alguém de confiança antes de partir.
+            </p>
+          </div>` : ''}
+
+          <div id="mapa" style="height:300px;border-radius:14px;overflow:hidden;border:1px solid var(--border);display:none"></div>
         </div>
 
-        
         <div class="viagem-right">
           <div id="zona-reserva"></div>
           <div id="msg-reserva" style="display:none;margin-top:12px"></div>
@@ -229,13 +309,33 @@
 
     const zona = document.getElementById('zona-reserva');
 
+    const bkAtiva = viagem.user_booking && !['CANCELLED_PASSENGER','CANCELLED_DRIVER'].includes(viagem.user_booking.status);
+    const BK_LABEL = { PENDING:'Aguarda Confirmação', CONFIRMED:'Confirmada', COMPLETED:'Concluída', NO_SHOW:'Não compareceu' };
+    const BK_CLASS = { PENDING:'badge-aguardar', CONFIRMED:'badge-confirmed', COMPLETED:'badge-completed', NO_SHOW:'badge-cancelled' };
+
     if (eSouOCondutor) {
       zona.innerHTML = '<div class="alert alert-info"><i class="bi bi-info-circle-fill"></i> És o condutor desta viagem — não podes reservar o teu próprio trajeto.</div>';
+    } else if (bkAtiva) {
+      const bk = viagem.user_booking;
+      zona.innerHTML = `
+        <div class="caixa">
+          <h3 style="margin:0 0 4px"><i class="bi bi-ticket-perforated-fill" style="color:var(--primary)"></i> A tua reserva</h3>
+          <p style="font-size:0.8rem;color:var(--muted);margin-bottom:14px">Já tens uma reserva nesta viagem.</p>
+          <span class="badge ${BK_CLASS[bk.status] || 'badge-archived'}">${BK_LABEL[bk.status] || bk.status}</span>
+          ${bk.driver_note ? `<div style="margin-top:12px;font-size:0.82rem;color:var(--muted);font-style:italic"><i class="bi bi-chat-text"></i> "${esc(bk.driver_note)}"</div>` : ''}
+          <div style="margin-top:16px">
+            <a href="reservas.html" class="btn-sm btn-info"><i class="bi bi-ticket-perforated"></i> Ver reservas</a>
+          </div>
+        </div>`;
     } else if (livres === 0) {
       zona.innerHTML = '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle-fill"></i> Sem lugares disponíveis nesta viagem.</div>';
     } else {
-      const opcoesParagens = stops.map(s =>
-        `<option value="${s.id}">${esc(s.label || s.address)}</option>`
+      const opcoesPickup = stops.slice(0, -1).map(s =>
+        `<option value="${s.id}" data-order="${s.stop_order}">${esc(s.label || s.address)}</option>`
+      ).join('');
+
+      const opcoesDropoffInicial = stops.slice(1).map(s =>
+        `<option value="${s.id}" data-order="${s.stop_order}">${esc(s.label || s.address)}</option>`
       ).join('');
 
       zona.innerHTML = `
@@ -253,14 +353,14 @@
             </div>
             <div class="form-group">
               <label>Paragem de embarque</label>
-              <select id="pickup" onchange="atualizarTotal(); destacarParagens()">
-                ${opcoesParagens}
+              <select id="pickup" onchange="atualizarDropoffOpcoes(); destacarParagens()">
+                ${opcoesPickup}
               </select>
             </div>
             <div class="form-group">
               <label>Paragem de desembarque</label>
               <select id="dropoff" onchange="atualizarTotal(); destacarParagens()">
-                ${opcoesParagens}
+                ${opcoesDropoffInicial}
               </select>
             </div>
             <div class="form-group">
@@ -293,6 +393,19 @@
 
     const stopsComCoords = stops.filter(s => s.lat && s.lng && !(s.lat == 0 && s.lng == 0));
     if (stopsComCoords.length > 0) initMapa(stops);
+  }
+
+  function atualizarDropoffOpcoes() {
+    const pickupSel   = document.getElementById('pickup');
+    const pickupOrder = parseInt(pickupSel.selectedOptions[0]?.dataset.order || 0);
+    const stops       = typeof viagem.stops === 'string' ? JSON.parse(viagem.stops) : (viagem.stops || []);
+    const valid       = stops.filter(s => s.stop_order > pickupOrder);
+    const dropoffSel  = document.getElementById('dropoff');
+    dropoffSel.innerHTML = valid.map(s =>
+      `<option value="${s.id}" data-order="${s.stop_order}">${esc(s.label || s.address)}</option>`
+    ).join('');
+    dropoffSel.selectedIndex = valid.length - 1;
+    atualizarTotal();
   }
 
   function atualizarTotal() {
@@ -416,6 +529,57 @@
     document.getElementById('nav-dashboard').innerHTML = '<i class="bi bi-speedometer2"></i> Painel';
     if (role === 'DRIVER') {
       document.getElementById('nav-reservas').style.display = 'none';
+    }
+  }
+
+  async function partilharDetalhes() {
+    if (!viagem) return;
+    const stops  = typeof viagem.stops === 'string' ? JSON.parse(viagem.stops) : (viagem.stops || []);
+    const origem  = (stops[0]?.address || '—').split(',')[0].trim();
+    const destino = (stops[stops.length-1]?.address || '—').split(',')[0].trim();
+    const data    = viagem.date ? (() => { const [y,m,d] = viagem.date.split('-'); return `${d}/${m}/${y}`; })() : '—';
+    const hora    = viagem.depart_time?.slice(0,5) || '—';
+    const veiculo = viagem.car_make
+      ? `${viagem.car_make} ${viagem.car_model || ''} ${viagem.car_year || ''}`.trim()
+      : 'Não especificado';
+    const link = `${location.origin}${location.pathname}?oc=${encodeURIComponent(viagem.occurrence_id || '')}`;
+
+    const texto = `🚗 Vou de boleia — Boleia.pt\n\n` +
+      `Condutor: ${viagem.driver_name || '—'}\n` +
+      `Veículo: ${veiculo}\n` +
+      `Rota: ${origem} → ${destino}\n` +
+      `Data: ${data} às ${hora}\n\n` +
+      `Ver detalhes: ${link}`;
+
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Detalhes da minha boleia', text: texto }); return; } catch {}
+    }
+    try {
+      await navigator.clipboard.writeText(texto);
+      toast('Detalhes copiados! Partilha com alguém de confiança.', 'success', 6000);
+    } catch { prompt('Copia e envia a alguém de confiança:', texto); }
+  }
+
+  async function partilharViagem() {
+    if (!viagem) return;
+    const url = `${location.origin}${location.pathname}?oc=${encodeURIComponent(viagem.occurrence_id)}`;
+    const stops = typeof viagem.stops === 'string' ? JSON.parse(viagem.stops) : (viagem.stops || []);
+    const origem  = (stops[0]?.address || '').split(',')[0].trim();
+    const destino = (stops[stops.length-1]?.address || '').split(',')[0].trim();
+    const texto   = `${origem} → ${destino} · ${viagem.depart_time?.slice(0,5)} · ${Number(viagem.price_per_seat).toFixed(2)}€`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `Boleia.pt — ${texto}`, url });
+        return;
+      } catch {}
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast('Link copiado para a área de transferência!', 'success');
+    } catch {
+      prompt('Copia este link:', url);
     }
   }
 
