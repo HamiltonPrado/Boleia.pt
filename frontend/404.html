@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Boleia.pt — Página não encontrada</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <style>
+    .notfound-wrap {
+      min-height: calc(100vh - 160px);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 40px 20px;
+    }
+    .notfound-code {
+      font-size: 7rem; font-weight: 800; line-height: 1;
+      font-family: 'Plus Jakarta Sans','Inter',sans-serif;
+      color: var(--primary); letter-spacing: -0.04em;
+      margin-bottom: 8px;
+    }
+    .notfound-icon {
+      font-size: 3rem; color: var(--border);
+      margin-bottom: 20px; display: block;
+    }
+    .notfound-title {
+      font-size: 1.4rem; font-weight: 700; color: var(--dark);
+      margin-bottom: 10px;
+      font-family: 'Plus Jakarta Sans','Inter',sans-serif;
+    }
+    .notfound-sub {
+      font-size: 0.95rem; color: var(--muted);
+      max-width: 380px; line-height: 1.6; margin-bottom: 32px;
+    }
+    .notfound-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  </style>
+</head>
+<body>
+
+<div class="navbar-wrapper">
+  <header class="navbar">
+    <a class="brand" href="index.html">
+      <div class="brand-icon"><i class="bi bi-car-front-fill"></i></div>
+      Boleia.pt
+    </a>
+    <div class="nav-links"></div>
+    <div class="user-actions">
+      <a href="login.html" class="nav-item"><i class="bi bi-box-arrow-in-right"></i> Entrar</a>
+      <a href="registo.html" class="nav-btn">Registar</a>
+    </div>
+  </header>
+</div>
+
+<div class="notfound-wrap">
+  <span class="notfound-code">404</span>
+  <i class="bi bi-map notfound-icon"></i>
+  <p class="notfound-title">Página não encontrada</p>
+  <p class="notfound-sub">A página que procuras não existe ou foi movida. Verifica o endereço ou volta ao início.</p>
+  <div class="notfound-btns">
+    <a href="index.html" class="nav-btn"><i class="bi bi-house-fill"></i> Voltar ao início</a>
+    <a href="pesquisa.html" class="nav-item" style="padding:10px 20px"><i class="bi bi-search"></i> Pesquisar viagens</a>
+  </div>
+</div>
+
+<footer>
+  <small>&copy; 2026 Boleia.pt — <a href="sobre.html">Sobre nós</a> | <a href="#">Termos de Uso</a> | <a href="#">Privacidade</a> | <a href="contacto.html">Contacto</a></small>
+</footer>
+
+<script src="utils.js"></script>
+<script>
+  fetch('../backend/auth/me.php').then(r => r.json()).then(d => {
+    if (!d.user) return;
+    const nav = document.querySelector('.user-actions');
+    nav.innerHTML = `
+      <a href="perfil.html" class="nav-item"><i class="bi bi-person-circle"></i> Perfil</a>
+      <a href="#" onclick="fetch('../backend/auth/logout.php',{method:'POST'}).then(()=>location.href='login.html')" class="nav-item"><i class="bi bi-box-arrow-right"></i> Sair</a>`;
+    const links = document.querySelector('.nav-links');
+    const r = d.user.role;
+    const dash = (r === 'DRIVER' || r === 'BOTH') ? 'dashboard_condutor.html' : 'dashboard.html';
+    links.innerHTML = `<a href="${dash}" class="nav-item"><i class="bi bi-speedometer2"></i> Dashboard</a>`;
+  }).catch(() => {});
+</script>
+
+</body>
+</html>
