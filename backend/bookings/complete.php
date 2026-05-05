@@ -32,6 +32,19 @@ $db->prepare("UPDATE bookings SET status = ? WHERE id = ?")->execute([$status, $
 if ($status === 'COMPLETED') {
     $db->prepare("UPDATE driver_profiles SET total_trips = total_trips + 1 WHERE user_id = ?")
        ->execute([$payload['userId']]);
+
+    $exists = $db->prepare("SELECT id FROM payments WHERE booking_id = ?");
+    $exists->execute([$id]);
+    if ($exists->fetch()) {
+        $db->prepare("UPDATE payments SET status = 'COMPLETED', completed_at = NOW() WHERE booking_id = ?")
+           ->execute([$id]);
+    } else {
+        $payId = uuid();
+        $db->prepare(
+            "INSERT INTO payments (id, booking_id, amount, status, created_at, completed_at)
+             VALUES (?, ?, ?, 'COMPLETED', NOW(), NOW())"
+        )->execute([$payId, $id, $booking['total_amount']]);
+    }
 }
 
 json_out(['success' => true, 'message' => 'Estado atualizado']);

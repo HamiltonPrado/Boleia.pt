@@ -71,6 +71,17 @@ $result = transaction(function($db) use ($occurrence_id, $pickup_stop_id, $dropo
         json_out(['success' => false, 'message' => 'Já tens uma reserva nesta boleia'], 409);
     }
 
+    // Validar ordem das paragens
+    $orderSt = $db->prepare("SELECT stop_order FROM route_stops WHERE id = ? AND route_id = ?");
+    $orderSt->execute([$pickup_stop_id, $occ['route_id']]);
+    $pickupRow  = $orderSt->fetch();
+    $orderSt->execute([$dropoff_stop_id, $occ['route_id']]);
+    $dropoffRow = $orderSt->fetch();
+    if (!$pickupRow || !$dropoffRow)
+        json_out(['success' => false, 'message' => 'Paragens inválidas para esta rota.'], 400);
+    if ($dropoffRow['stop_order'] <= $pickupRow['stop_order'])
+        json_out(['success' => false, 'message' => 'A paragem de desembarque deve ser após a de embarque na rota.'], 400);
+
     $bookingId   = uuid();
     $price       = (float)$occ['price_per_seat'];
     $serviceFee  = round($price * $seats_booked * 0.10, 2);

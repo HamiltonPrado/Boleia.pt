@@ -6,8 +6,9 @@ require_method('PATCH');
 
 $payload = require_auth();
 $id      = $_GET['id'] ?? '';
-$b       = body();
-$status  = $b['status'] ?? '';
+$b           = body();
+$status      = $b['status']      ?? '';
+$driver_note = trim($b['driver_note'] ?? '') ?: null;
 
 if (!$id) json_out(['success' => false, 'message' => 'id em falta'], 400);
 if (!in_array($status, ['CONFIRMED', 'CANCELLED_DRIVER']))
@@ -26,7 +27,7 @@ transaction(function($db) use ($id, $payload, $status) {
     $booking = $st->fetch();
     if (!$booking) json_out(['success' => false, 'message' => 'Reserva não encontrada'], 404);
 
-    $db->prepare("UPDATE bookings SET status = ? WHERE id = ?")->execute([$status, $id]);
+    $db->prepare("UPDATE bookings SET status = ?, driver_note = ? WHERE id = ?")->execute([$status, $driver_note, $id]);
 
     if ($status === 'CANCELLED_DRIVER') {
         $db->prepare("UPDATE route_occurrences SET seats_taken = seats_taken - ? WHERE id = ?")
