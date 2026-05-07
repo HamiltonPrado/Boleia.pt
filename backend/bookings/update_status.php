@@ -14,7 +14,7 @@ if (!$id) json_out(['success' => false, 'message' => 'id em falta'], 400);
 if (!in_array($status, ['CONFIRMED', 'CANCELLED_DRIVER']))
     json_out(['success' => false, 'message' => 'Status inválido'], 400);
 
-transaction(function($db) use ($id, $payload, $status) {
+transaction(function($db) use ($id, $payload, $status, $driver_note) {
     $st = $db->prepare(
         "SELECT b.*, r.depart_time
          FROM bookings b
