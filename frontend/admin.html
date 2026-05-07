@@ -647,7 +647,7 @@
     e.preventDefault();
     if (!await confirmar(status === 'SUSPENDED' ? 'O utilizador ficará suspenso e não poderá aceder à plataforma.' : 'O utilizador voltará a ter acesso à plataforma.', { titulo: status === 'SUSPENDED' ? 'Suspender utilizador?' : 'Reativar utilizador?', okLabel: status === 'SUSPENDED' ? 'Suspender' : 'Reativar', okClass: status === 'SUSPENDED' ? 'btn-danger' : 'btn-ok' })) return;
     const res  = await fetch(`../backend/admin/update_user_status.php?id=${userId}`, {
-      method: 'PATCH',
+      method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ status })
     });
@@ -750,7 +750,7 @@
       : `../backend/admin/review_document.php?id=${id}`;
     if (!await confirmar(status === 'APPROVED' ? 'O condutor ficará aprovado e poderá aceitar passageiros.' : 'O pedido será rejeitado.', { titulo: status === 'APPROVED' ? 'Aprovar?' : 'Rejeitar?', okLabel: status === 'APPROVED' ? 'Aprovar' : 'Rejeitar', okClass: status === 'APPROVED' ? 'btn-ok' : 'btn-danger' })) return;
     const res  = await fetch(endpoint, {
-      method: 'PATCH',
+      method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ action: status === 'APPROVED' ? 'approve' : 'reject' })
     });
@@ -880,7 +880,7 @@
   async function updateCplStatus(e, id, status) {
     e.preventDefault();
     const res  = await fetch(`../backend/complaints/update_status.php?id=${id}`, {
-      method: 'PATCH',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })
     });

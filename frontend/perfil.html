@@ -553,7 +553,7 @@
     const last      = document.getElementById('last_name').value.trim();
     const full_name = last ? `${first} ${last}` : first;
     const res  = await fetch('../backend/users/profile.php', {
-      method: 'PATCH',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ full_name, phone: document.getElementById('phone').value.trim() })
     });
@@ -571,7 +571,7 @@
     const conf = document.getElementById('pass-confirmar').value;
     if (nova !== conf) { toast('As novas palavras-passe não coincidem.', 'danger'); return; }
     const res  = await fetch('../backend/users/password.php', {
-      method: 'PATCH',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         current_password: document.getElementById('pass-atual').value,
@@ -601,7 +601,7 @@
   async function guardarCarro(e) {
     e.preventDefault();
     const res  = await fetch('../backend/users/car.php', {
-      method: 'PATCH',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         car_make:  document.getElementById('car_make').value.trim(),

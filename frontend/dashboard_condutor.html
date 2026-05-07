@@ -591,7 +591,7 @@
     const btn   = document.getElementById('btn-confirmar-recusar');
     btnLoad(btn, true, 'A recusar...');
     const res   = await fetch(`../backend/bookings/update_status.php?id=${id}`, {
-      method: 'PATCH',
+      method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ status: 'CANCELLED_DRIVER', driver_note: nota })
     });
@@ -609,7 +609,7 @@
   async function atualizarEstado(e, id, status) {
     e.preventDefault();
     const res  = await fetch(`../backend/bookings/update_status.php?id=${id}`, {
-      method: 'PATCH',
+      method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ status })
     });
@@ -655,7 +655,7 @@
   async function pausarRota(e, routeId, novoStatus) {
     e.preventDefault();
     const res  = await fetch(`../backend/routes/detail.php?id=${routeId}`, {
-      method: 'PATCH',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: novoStatus })
     });

@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../auth_helper.php';
 cors();
-require_method('PATCH');
+require_method('POST');
 
 $payload = require_auth();
 $id      = $_GET['id'] ?? '';

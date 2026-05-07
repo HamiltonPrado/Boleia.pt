@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../auth_helper.php';
 cors();
-require_method('GET', 'PATCH', 'DELETE');
+require_method('GET', 'POST', 'DELETE');
 
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = $_GET['id'] ?? '';
@@ -30,7 +30,7 @@ if ($method === 'GET') {
     json_out(['success' => true, 'route' => $route]);
 }
 
-if ($method === 'PATCH') {
+if ($method === 'POST') {
     $payload = require_auth();
     $b      = body();
     $status = $b['status'] ?? '';
