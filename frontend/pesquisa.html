@@ -653,7 +653,8 @@
 
   function verViagem(e, idx) {
     e.preventDefault();
-    sessionStorage.setItem('viagem_atual', JSON.stringify(todosResultados[idx]));
+    const v = todosResultados[idx];
+    if (!v?.occurrence_id) return;
     sessionStorage.setItem('pesquisa_state', JSON.stringify({
       resultados:   todosResultados,
       origem:       document.getElementById('origem').value,
@@ -663,7 +664,7 @@
       summaryDate:  document.getElementById('summary-date-sub').textContent,
       coords:       _coords
     }));
-    window.location.href = 'viagem.html';
+    window.location.href = `viagem.html?oc=${encodeURIComponent(v.occurrence_id)}`;
   }
 
   async function verCondutor(e, driverId) {

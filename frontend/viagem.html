@@ -190,22 +190,9 @@
         return;
       }
     } else {
-      const raw = sessionStorage.getItem('viagem_atual');
-      if (!raw) {
-        document.getElementById('conteudo').innerHTML =
-          '<div class="empty-state"><i class="bi bi-search"></i><p>Nenhuma viagem selecionada.</p><a href="pesquisa.html" class="btn-sm btn-info"><i class="bi bi-search"></i> Pesquisar viagens</a></div>';
-        return;
-      }
-      viagem = JSON.parse(raw);
-      try {
-        const bkRes = await fetch(`../backend/bookings/index.php`);
-        const bkData = await bkRes.json();
-        const ocId = viagem.occurrence_id;
-        const bk = (bkData.bookings || []).find(b =>
-          b.occurrence_id === ocId && !['CANCELLED_PASSENGER','CANCELLED_DRIVER'].includes(b.status)
-        );
-        viagem.user_booking = bk || null;
-      } catch { viagem.user_booking = null; }
+      document.getElementById('conteudo').innerHTML =
+        '<div class="empty-state"><i class="bi bi-search"></i><p>Nenhuma viagem selecionada.</p><a href="pesquisa.html" class="btn-sm btn-info"><i class="bi bi-search"></i> Pesquisar viagens</a></div>';
+      return;
     }
 
     const stops   = typeof viagem.stops === 'string' ? JSON.parse(viagem.stops) : (viagem.stops || []);
