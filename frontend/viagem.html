@@ -384,9 +384,10 @@
 
   function atualizarDropoffOpcoes() {
     const pickupSel   = document.getElementById('pickup');
-    const pickupOrder = parseInt(pickupSel.selectedOptions[0]?.dataset.order || 0);
+    const pickupId    = pickupSel.value;
+    const pickupOrder = parseInt(pickupSel.selectedOptions[0]?.dataset.order ?? 0);
     const stops       = typeof viagem.stops === 'string' ? JSON.parse(viagem.stops) : (viagem.stops || []);
-    const valid       = stops.filter(s => s.stop_order > pickupOrder);
+    const valid       = stops.filter(s => s.stop_order > pickupOrder && s.id !== pickupId);
     const dropoffSel  = document.getElementById('dropoff');
     dropoffSel.innerHTML = valid.map(s =>
       `<option value="${s.id}" data-order="${s.stop_order}">${esc(s.label || s.address)}</option>`
@@ -472,6 +473,14 @@
     const pickupId  = document.getElementById('pickup').value;
     const dropoffId = document.getElementById('dropoff').value;
 
+    if (!viagem?.occurrence_id) {
+      toast('Erro: viagem inválida. Volta à pesquisa e tenta novamente.', 'danger');
+      return;
+    }
+    if (!pickupId || !dropoffId) {
+      toast('Seleciona as paragens de embarque e desembarque.', 'danger');
+      return;
+    }
     if (pickupId === dropoffId) {
       toast('A paragem de embarque e desembarque não podem ser iguais.', 'danger');
       return;
@@ -480,16 +489,19 @@
     const btn = document.getElementById('btn-reservar');
     btnLoad(btn, true, 'A processar...');
 
+    const payload = {
+      occurrence_id:   viagem.occurrence_id,
+      pickup_stop_id:  pickupId,
+      dropoff_stop_id: dropoffId,
+      seats_booked:    parseInt(document.getElementById('num-lugares').value),
+      note_to_driver:  document.getElementById('mensagem').value.trim() || null
+    };
+    console.log('[reservar] payload:', payload);
+
     const res  = await fetch('../backend/bookings/index.php', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        occurrence_id:   viagem.occurrence_id,
-        pickup_stop_id:  pickupId,
-        dropoff_stop_id: dropoffId,
-        seats_booked:    parseInt(document.getElementById('num-lugares').value),
-        note_to_driver:  document.getElementById('mensagem').value.trim() || null
-      })
+      body:    JSON.stringify(payload)
     });
     const data = await res.json();
 
