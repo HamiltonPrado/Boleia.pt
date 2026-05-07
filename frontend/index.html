@@ -27,23 +27,23 @@
     .rc {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 18px 20px;
       box-shadow: var(--shadow);
       cursor: pointer;
-      transition: box-shadow 150ms, border-color 150ms;
+      transition: box-shadow 200ms ease-out, border-color 200ms, transform 200ms ease-out;
       display: flex;
       flex-direction: column;
       gap: 14px;
     }
-    .rc:hover { box-shadow: var(--shadow-md); border-color: var(--primary); }
+    .rc:hover { box-shadow: var(--shadow-md); border-color: var(--primary); transform: translateY(-3px); }
     .rc-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .rc-driver { display: flex; align-items: center; gap: 10px; }
     .rc-av {
-      width: 34px; height: 34px; border-radius: 50%;
+      width: 40px; height: 40px; border-radius: 50%;
       background: var(--primary-light); color: var(--primary);
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.68rem; font-weight: 700; flex-shrink: 0; overflow: hidden;
+      font-size: 0.72rem; font-weight: 700; flex-shrink: 0; overflow: hidden;
       border: 1.5px solid var(--border);
     }
     .rc-av img { width: 100%; height: 100%; object-fit: cover; }
@@ -187,8 +187,39 @@
   </div>
 </div>
 
-<footer>
-  <small>&copy; 2026 Boleia.pt — <a href="sobre.html">Sobre nós</a> | <a href="#">Termos de Uso</a> | <a href="#">Privacidade</a> | <a href="contacto.html">Contacto</a></small>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a class="brand" href="index.html" style="color:inherit;text-decoration:none">
+        <div class="brand-icon"><i class="bi bi-car-front-fill"></i></div>
+        Boleia.pt
+      </a>
+      <p class="footer-tagline">A boleia perfeita, sempre à mão. Partilha a viagem, divide os custos. Rápido, seguro e económico.</p>
+    </div>
+    <div class="footer-cols">
+      <div class="footer-col">
+        <div class="footer-col-title">Plataforma</div>
+        <a href="pesquisa.html"><i class="bi bi-search" style="margin-right:6px;opacity:.5"></i>Pesquisar viagens</a>
+        <a href="publicar.html"><i class="bi bi-plus-circle" style="margin-right:6px;opacity:.5"></i>Publicar rota</a>
+        <a href="reservas.html"><i class="bi bi-ticket-perforated" style="margin-right:6px;opacity:.5"></i>As minhas reservas</a>
+        <a href="dashboard.html"><i class="bi bi-speedometer2" style="margin-right:6px;opacity:.5"></i>Dashboard</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Empresa</div>
+        <a href="sobre.html">Sobre nós</a>
+        <a href="contacto.html">Contacto</a>
+        <a href="#">Termos de Uso</a>
+        <a href="#">Privacidade</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <small>&copy; 2026 Boleia.pt — Todos os direitos reservados</small>
+    <small style="display:flex;align-items:center;gap:6px">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--success);display:inline-block"></span>
+      Todos os sistemas operacionais
+    </small>
+  </div>
 </footer>
 
 <script src="utils.js"></script>
@@ -225,6 +256,10 @@
     const origem  = (v.origem||'—').split(',')[0].trim();
     const destino = (v.destino||'—').split(',')[0].trim();
 
+    const urgency = livres <= 1
+      ? `<span class="badge badge-hot" style="font-size:0.68rem;padding:2px 8px;margin-left:6px"><i class="bi bi-lightning-charge-fill"></i> Última vaga</span>`
+      : '';
+
     return `<div class="rc" onclick="location.href='${isDemo ? 'registo.html' : 'login.html'}'">
       <div class="rc-top">
         <div class="rc-driver">
@@ -251,7 +286,7 @@
         </div>
       </div>
       <div class="rc-foot">
-        <span class="rc-seats"><i class="bi bi-check-circle-fill"></i> ${livres} lugar${livres!==1?'es':''}</span>
+        <span class="rc-seats"><i class="bi bi-check-circle-fill"></i> ${livres} lugar${livres!==1?'es':''}${urgency}</span>
         ${v.date ? `<span class="rc-date">${fmtDate(v.date)}</span>` : ''}
       </div>
     </div>`;
@@ -285,10 +320,34 @@
     }
   }
 
+  function countUp(id, finalText, duration = 1400) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const num    = parseInt(finalText.replace(/\./g, '').replace(/[^\d]/g, ''));
+    const suffix = finalText.replace(/^[\d.,\s]+/, '').trim();
+    let start = null;
+    function step(ts) {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(eased * num).toLocaleString('pt-PT') + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
   function carregarStats() {
-    document.getElementById('stat-viagens').textContent = '1.200+';
-    document.getElementById('stat-rotas').textContent   = '340+';
-    document.getElementById('stat-users').textContent   = '2.800+';
+    const heroStats = document.querySelector('.hero-stats');
+    if (!heroStats) return;
+    const obs = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        countUp('stat-viagens', '1.200+');
+        countUp('stat-rotas',   '340+');
+        countUp('stat-users',   '2.800+');
+        obs.disconnect();
+      }
+    }, { threshold: 0.4 });
+    obs.observe(heroStats);
   }
 
   function pesquisarFromHero() {
@@ -311,6 +370,14 @@
 
   carregarViagens();
   carregarStats();
+
+  // Navbar scroll shadow
+  const _navbar = document.querySelector('.navbar');
+  if (_navbar) {
+    window.addEventListener('scroll', () => {
+      _navbar.classList.toggle('scrolled', window.scrollY > 24);
+    }, { passive: true });
+  }
 </script>
 
 </body>

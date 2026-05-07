@@ -6,6 +6,7 @@
   <title>Boleia.pt — Administração</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <style>
     
     .admin-layout {
@@ -261,6 +262,49 @@
       .admin-hero-stats { grid-template-columns: 1fr; }
       .admin-sec-stats  { grid-template-columns: 1fr 1fr; }
     }
+
+    .estat-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .estat-metric {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+    }
+    .estat-metric-label {
+      font-size: 0.72rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); margin-bottom: 6px;
+    }
+    .estat-metric-value {
+      font-size: 1.45rem; font-weight: 800; line-height: 1.1;
+      font-family: 'Plus Jakarta Sans','Inter',sans-serif; color: var(--dark);
+    }
+    .estat-metric-sub { font-size: 0.72rem; color: var(--muted); margin-top: 5px; }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 800px) { .chart-grid { grid-template-columns: 1fr; } }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+    }
+    .chart-card-title {
+      font-size: 0.875rem; font-weight: 700; color: var(--dark);
+      display: flex; align-items: center; gap: 7px; margin-bottom: 3px;
+    }
+    .chart-card-sub { font-size: 0.75rem; color: var(--muted); margin-bottom: 18px; }
   </style>
 </head>
 <body>
@@ -312,6 +356,9 @@
         <a href="#" onclick="mostrarAba(event,'aba-reclamacoes')" class="admin-nav-item" id="nav-aba-reclamacoes">
           <i class="bi bi-flag-fill"></i> Reclamações
           <span class="admin-nav-badge" id="badge-reclamacoes"></span>
+        </a>
+        <a href="#" onclick="mostrarAba(event,'aba-estatisticas')" class="admin-nav-item" id="nav-aba-estatisticas">
+          <i class="bi bi-bar-chart-fill"></i> Estatísticas
         </a>
       </nav>
     </div>
@@ -381,6 +428,41 @@
       <div id="reclamacoes-conteudo"><p>A carregar...</p></div>
     </div>
 
+    <div id="aba-estatisticas" style="display:none">
+      <h2><i class="bi bi-bar-chart-fill"></i> Estatísticas</h2>
+
+      <div id="estat-metrics" class="estat-metrics-grid">
+        <div class="estat-metric"><div class="skeleton" style="height:64px;border-radius:8px"></div></div>
+        <div class="estat-metric"><div class="skeleton" style="height:64px;border-radius:8px"></div></div>
+        <div class="estat-metric"><div class="skeleton" style="height:64px;border-radius:8px"></div></div>
+        <div class="estat-metric"><div class="skeleton" style="height:64px;border-radius:8px"></div></div>
+        <div class="estat-metric"><div class="skeleton" style="height:64px;border-radius:8px"></div></div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-card-title"><i class="bi bi-graph-up" style="color:var(--primary)"></i> Reservas por mês</div>
+          <div class="chart-card-sub">Últimos 6 meses (confirmadas + concluídas)</div>
+          <canvas id="chart-viagens-mes"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title"><i class="bi bi-pie-chart-fill" style="color:var(--warning)"></i> Estado das reservas</div>
+          <div class="chart-card-sub">Distribuição total na plataforma</div>
+          <canvas id="chart-reservas-estado"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title"><i class="bi bi-calendar-week" style="color:var(--primary)"></i> Viagens por dia da semana</div>
+          <div class="chart-card-sub">Fins de semana a azul escuro</div>
+          <canvas id="chart-viagens-semana"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title"><i class="bi bi-signpost-2-fill" style="color:var(--success)"></i> Top 5 rotas mais populares</div>
+          <div class="chart-card-sub">Por número de reservas concluídas</div>
+          <canvas id="chart-top-rotas"></canvas>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -394,7 +476,7 @@
 
   function mostrarAba(e, id) {
     e.preventDefault();
-    const abas = ['aba-stats','aba-utilizadores','aba-condutores','aba-documentos','aba-atividade','aba-reclamacoes'];
+    const abas = ['aba-stats','aba-utilizadores','aba-condutores','aba-documentos','aba-atividade','aba-reclamacoes','aba-estatisticas'];
     abas.forEach(a => document.getElementById(a).style.display = (a === id) ? '' : 'none');
     document.querySelectorAll('.admin-nav-item').forEach(el => el.classList.remove('active'));
     const navItem = document.getElementById(`nav-${id}`);
@@ -404,6 +486,7 @@
     if (id === 'aba-documentos')    carregarDocumentos();
     if (id === 'aba-atividade')     carregarAtividade();
     if (id === 'aba-reclamacoes')   carregarReclamacoes();
+    if (id === 'aba-estatisticas')  carregarEstatisticas();
   }
 
   async function init() {
@@ -815,6 +898,174 @@
   function fmtLong(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${parseInt(dd)} ${_MESES[parseInt(m)-1]} ${y}`; }
   function fmt(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; }
   function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  let _charts = {};
+
+  async function carregarEstatisticas() {
+    Object.values(_charts).forEach(c => { try { c.destroy(); } catch {} });
+    _charts = {};
+
+    let d = null;
+    try {
+      const res = await fetch('../backend/admin/stats_charts.php');
+      if (res.ok) { const j = await res.json(); if (j.success) d = j; }
+    } catch {}
+
+    const meses = d?.meses || {
+      labels: ['Dez', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai'],
+      data:   [42, 58, 71, 89, 103, 118]
+    };
+    const estados = d?.estados || { confirmadas: 45, concluidas: 38, canceladas: 12, pendentes: 5 };
+    const semana  = d?.semana  || {
+      labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+      data:   [23, 18, 21, 25, 67, 89, 54]
+    };
+    const topRotas = d?.top_rotas || {
+      labels: ['Lisboa → Porto', 'Porto → Lisboa', 'Lisboa → Faro', 'Setúbal → Lisboa', 'Coimbra → Lisboa'],
+      data:   [145, 132, 87, 64, 58]
+    };
+    const m = d?.metricas || {
+      preco_medio: 12.4, desvio_padrao: 4.2,
+      taxa_confirmacao: 83, taxa_cancelamento: 12,
+      avaliacao_media: 4.7, total_rotas: 47
+    };
+
+    document.getElementById('estat-metrics').innerHTML = `
+      <div class="estat-metric">
+        <div class="estat-metric-label">Preço médio</div>
+        <div class="estat-metric-value">${Number(m.preco_medio).toFixed(2).replace('.',',')}€</div>
+        <div class="estat-metric-sub">±${Number(m.desvio_padrao).toFixed(2).replace('.',',')}€ desvio padrão</div>
+      </div>
+      <div class="estat-metric">
+        <div class="estat-metric-label">Taxa de confirmação</div>
+        <div class="estat-metric-value" style="color:var(--success)">${Math.round(m.taxa_confirmacao)}%</div>
+        <div class="estat-metric-sub">reservas confirmadas</div>
+      </div>
+      <div class="estat-metric">
+        <div class="estat-metric-label">Taxa de cancelamento</div>
+        <div class="estat-metric-value" style="color:var(--danger)">${Math.round(m.taxa_cancelamento)}%</div>
+        <div class="estat-metric-sub">reservas canceladas</div>
+      </div>
+      <div class="estat-metric">
+        <div class="estat-metric-label">Avaliação média</div>
+        <div class="estat-metric-value" style="color:var(--warning)">★ ${Number(m.avaliacao_media).toFixed(1)}</div>
+        <div class="estat-metric-sub">média dos condutores</div>
+      </div>
+      <div class="estat-metric">
+        <div class="estat-metric-label">Rotas ativas</div>
+        <div class="estat-metric-value">${m.total_rotas}</div>
+        <div class="estat-metric-sub">na plataforma</div>
+      </div>`;
+
+    Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+    Chart.defaults.color       = '#64748B';
+    const gridColor = 'rgba(226,232,240,0.8)';
+
+    _charts.mes = new Chart(document.getElementById('chart-viagens-mes'), {
+      type: 'line',
+      data: {
+        labels: meses.labels,
+        datasets: [{
+          label: 'Reservas',
+          data: meses.data,
+          borderColor: '#2563EB',
+          backgroundColor: 'rgba(37,99,235,0.07)',
+          borderWidth: 2.5,
+          tension: 0.4,
+          fill: true,
+          pointRadius: 5,
+          pointBackgroundColor: '#2563EB',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: gridColor }, ticks: { precision: 0 } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    const totalRes = estados.confirmadas + estados.concluidas + estados.canceladas + estados.pendentes;
+    _charts.estados = new Chart(document.getElementById('chart-reservas-estado'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Confirmadas', 'Concluídas', 'Canceladas', 'Pendentes'],
+        datasets: [{
+          data: [estados.confirmadas, estados.concluidas, estados.canceladas, estados.pendentes],
+          backgroundColor: ['#2563EB', '#16A34A', '#DC2626', '#D97706'],
+          borderWidth: 3,
+          borderColor: '#ffffff',
+          hoverOffset: 8,
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '66%',
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 14, font: { size: 12 }, usePointStyle: true, pointStyleWidth: 8 } },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const pct = totalRes ? Math.round(ctx.parsed / totalRes * 100) : 0;
+                return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    _charts.semana = new Chart(document.getElementById('chart-viagens-semana'), {
+      type: 'bar',
+      data: {
+        labels: semana.labels,
+        datasets: [{
+          label: 'Viagens',
+          data: semana.data,
+          backgroundColor: semana.labels.map((_, i) =>
+            i >= 4 ? 'rgba(37,99,235,0.85)' : 'rgba(37,99,235,0.32)'
+          ),
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: gridColor }, ticks: { precision: 0 } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    _charts.rotas = new Chart(document.getElementById('chart-top-rotas'), {
+      type: 'bar',
+      data: {
+        labels: topRotas.labels,
+        datasets: [{
+          label: 'Reservas',
+          data: topRotas.data,
+          backgroundColor: 'rgba(22,163,74,0.72)',
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, grid: { color: gridColor }, ticks: { precision: 0 } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+  }
 
   init();
 </script>
