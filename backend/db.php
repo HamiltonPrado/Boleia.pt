@@ -43,6 +43,6 @@ function transaction(callable $fn) {
         return $result;
     } catch (Exception $e) {
         $db->rollBack();
-        json_out(['success' => false, 'message' => 'Erro no servidor'], 500);
+        json_out(['success' => false, 'message' => 'Erro no servidor', '_debug' => $e->getMessage()], 500);
     }
 }
