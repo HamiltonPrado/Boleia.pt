@@ -29,7 +29,8 @@ if ($method === 'GET') {
     json_out(['success' => true, 'bookings' => $st->fetchAll()]);
 }
 
-$b               = body();
+$raw             = file_get_contents('php://input');
+$b               = (array) json_decode($raw, true);
 $occurrence_id   = $b['occurrence_id']   ?? '';
 $pickup_stop_id  = $b['pickup_stop_id']  ?? '';
 $dropoff_stop_id = $b['dropoff_stop_id'] ?? '';
@@ -37,7 +38,7 @@ $seats_booked    = (int)($b['seats_booked'] ?? 1);
 $note            = $b['note_to_driver'] ?? null;
 
 if (!$occurrence_id || !$pickup_stop_id || !$dropoff_stop_id)
-    json_out(['success' => false, 'message' => 'occurrence_id, pickup_stop_id e dropoff_stop_id são obrigatórios'], 400);
+    json_out(['success' => false, 'message' => 'occurrence_id, pickup_stop_id e dropoff_stop_id são obrigatórios', '_debug' => ['raw_len' => strlen($raw), 'body_keys' => array_keys($b)]], 400);
 if ($seats_booked < 1 || $seats_booked > 8)
     json_out(['success' => false, 'message' => 'Número de lugares inválido (1-8)'], 400);
 
