@@ -427,13 +427,13 @@
     const validos = stops.filter(s => s.lat && s.lng && !(s.lat == 0 && s.lng == 0));
     if (validos.length === 0) return;
 
-    const tipoLabel = i => i === 0 ? 'Origem' : i === validos.length - 1 ? 'Destino' : 'Paragem';
-    const corEmoji  = i => i === 0 ? '🟢' : i === validos.length - 1 ? '🔴' : '🔵';
-    const latLngs   = [];
+    const tipoLabel   = i => i === 0 ? 'Origem' : i === validos.length - 1 ? 'Destino' : 'Paragem';
+    const pinClass    = i => i === 0 ? 'map-pin map-pin-origin' : i === validos.length - 1 ? 'map-pin map-pin-dest' : 'map-pin map-pin-stop';
+    const latLngs     = [];
 
     validos.forEach((s, i) => {
       marcadores[s.id] = L.marker([s.lat, s.lng], {
-        icon: L.divIcon({ html: corEmoji(i), iconSize: [20, 20], className: '' })
+        icon: L.divIcon({ className: pinClass(i), html: '', iconSize: [14, 14], iconAnchor: [7, 7] })
       }).addTo(mapaObj).bindPopup(`<b>${tipoLabel(i)}</b><br>${esc(s.label || s.address)}`);
       latLngs.push([s.lat, s.lng]);
     });

@@ -32,8 +32,9 @@
     .reserva-route {
       font-weight: 700; font-size: 1rem; color: var(--dark);
       margin: 5px 0 3px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 340px;
+      white-space: normal; overflow: visible;
     }
+    .reserva-route-dest { font-size: 0.88rem; font-weight: 500; color: var(--muted); }
     .reserva-meta { font-size: 0.82rem; color: var(--muted); }
     .reserva-right {
       display: flex; flex-direction: column;
@@ -333,7 +334,7 @@
     );
 
     if (bookings.length === 0) {
-      div.innerHTML = `<p style="font-size:0.875rem;color:var(--muted);margin-bottom:4px">Ainda não tens reservas.</p>`;
+      div.innerHTML = `<div class="empty-state"><i class="bi bi-ticket-perforated"></i><p>Ainda não tens reservas. <a href="pesquisa.html" class="btn-sm btn-info"><i class="bi bi-search"></i> Pesquisar viagens</a></p></div>`;
       carregarSugestoes();
       return;
     }
@@ -395,7 +396,7 @@
       <div class="reserva-avatar">${avatarHtml}</div>
       <div class="reserva-info">
         <span class="badge ${STATUS_BADGE[b.status] || 'badge-archived'}">${STATUS_LABEL[b.status] || b.status}</span>
-        <div class="reserva-route">${esc(origem)} a ${esc(destino)}</div>
+        <div class="reserva-route">${esc(origem)}<span class="reserva-route-dest"> → ${esc(destino)}</span></div>
         <div class="reserva-meta">${fmtDatetime(b.date, b.depart_time)}</div>
         ${b.status === 'CANCELLED_DRIVER' && b.driver_note ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:3px;font-style:italic"><i class="bi bi-chat-text"></i> "${esc(b.driver_note)}"</div>` : ''}
       </div>

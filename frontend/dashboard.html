@@ -11,8 +11,9 @@
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 16px; padding: 20px 24px; box-shadow: var(--shadow);
       display: flex; align-items: center; justify-content: space-between;
-      gap: 16px; margin-bottom: 20px;
+      gap: 16px; margin-bottom: 32px; flex-wrap: wrap;
     }
+    .dash-profile-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
     .dash-profile-left { display: flex; align-items: center; gap: 16px; }
     .dash-avatar {
       width: 54px; height: 54px; border-radius: 50%;
@@ -41,7 +42,8 @@
     }
     .res-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .res-info { display: flex; flex-direction: column; gap: 5px; min-width: 0; align-items: flex-start; }
-    .res-route { font-size: 1rem; font-weight: 700; color: var(--dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 340px; }
+    .res-route { font-size: 1rem; font-weight: 700; color: var(--dark); }
+    .res-route-dest { font-size: 0.88rem; font-weight: 500; color: var(--muted); }
     .res-date  { font-size: 0.82rem; color: var(--muted); }
     .res-card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
     .res-price { font-size: 1.6rem; font-weight: 800; color: var(--success); font-family: 'Plus Jakarta Sans','Inter',sans-serif; line-height: 1; }
@@ -56,7 +58,10 @@
     .dash-cta-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 3px; font-family: 'Plus Jakarta Sans','Inter',sans-serif; }
     .dash-cta-sub   { font-size: 0.82rem; color: rgba(255,255,255,0.65); }
 
-    .rc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 32px; }
+    .dash-section { margin-bottom: 36px; }
+    .rc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 32px; }
+    @media (max-width: 900px) { .rc-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .rc-grid { grid-template-columns: 1fr; } }
     .rc {
       background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
       padding: 18px 20px; box-shadow: var(--shadow); cursor: pointer;
@@ -124,26 +129,21 @@
       </p>
     </div>
   </div>
-  <a href="perfil.html" class="btn-sm btn-muted"><i class="bi bi-pencil-square"></i> Editar Perfil</a>
-</div>
-
-<div class="dash-cta">
-  <div>
-    <p class="dash-cta-title">Pronto para a próxima boleia?</p>
-    <p class="dash-cta-sub">Encontra viagens disponíveis e reserva em segundos.</p>
+  <div class="dash-profile-actions">
+    <a href="pesquisa.html" class="nav-btn"><i class="bi bi-search"></i> Pesquisar boleia</a>
+    <a href="perfil.html" class="btn-sm btn-muted"><i class="bi bi-pencil-square"></i> Editar Perfil</a>
   </div>
-  <a href="pesquisa.html" class="nav-btn" style="flex-shrink:0"><i class="bi bi-search"></i> Pesquisar boleia</a>
 </div>
 
-<div id="secao-passageiro">
+<div id="secao-passageiro" class="dash-section">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-    <h2 style="margin-bottom:0">As minhas reservas</h2>
+    <h2 style="margin-bottom:0"><i class="bi bi-ticket-perforated"></i> As minhas reservas</h2>
     <a href="reservas.html" style="font-size:0.875rem;color:var(--primary);font-weight:500;text-decoration:none">Ver todas <i class="bi bi-arrow-right"></i></a>
   </div>
   <div id="reservas-tabela"></div>
 </div>
 
-<div id="secao-historico" style="display:none">
+<div id="secao-historico" class="dash-section" style="display:none">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
     <h2 style="margin-bottom:0"><i class="bi bi-clock-history"></i> Viagens passadas</h2>
     <a href="reservas.html" style="font-size:0.875rem;color:var(--primary);font-weight:500;text-decoration:none">Ver todas <i class="bi bi-arrow-right"></i></a>
@@ -151,7 +151,7 @@
   <div id="historico-tabela"></div>
 </div>
 
-<div id="secao-sugestoes" style="display:none">
+<div id="secao-sugestoes" class="dash-section" style="display:none">
   <h2><i class="bi bi-lightning-charge-fill"></i> Próximas viagens disponíveis</h2>
   <div id="sugestoes-grid"></div>
 </div>
@@ -211,7 +211,10 @@
 
     const div = document.getElementById('reservas-tabela');
     if (proximas.length === 0) {
-      div.innerHTML = `<p style="font-size:0.875rem;color:var(--muted);margin-bottom:4px">Não tens reservas próximas.</p>`;
+      div.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;margin-bottom:4px">
+        <p style="font-size:0.875rem;color:var(--muted);margin:0">Não tens reservas próximas.</p>
+        <a href="pesquisa.html" class="btn-sm btn-muted" style="flex-shrink:0"><i class="bi bi-search"></i> Encontrar boleia</a>
+      </div>`;
       carregarSugestoes();
       return;
     }
@@ -244,7 +247,7 @@
             <div class="res-avatar">${avatarHtml}</div>
             <div class="res-info">
               ${badge}
-              <div class="res-route">${esc(origem)} a ${esc(destino)}</div>
+              <div class="res-route">${esc(origem)}<span class="res-route-dest"> → ${esc(destino)}</span></div>
               <div class="res-date">${fmtDT(b.date, b.depart_time)}</div>
             </div>
           </div>
@@ -358,14 +361,14 @@
         <div class="skeleton" style="width:70%;height:10px;border-radius:4px"></div>
       </div>`).join('')}</div>`;
     try {
-      const res    = await fetch('../backend/routes/upcoming.php?limit=6');
+      const res    = await fetch('../backend/routes/upcoming.php?limit=3');
       const data   = await res.json();
       const routes = data.routes || [];
       grid.innerHTML = `<div class="rc-grid">${
-        (routes.length > 0 ? routes : DEMO_ROUTES).map(v => renderCard(v)).join('')
+        (routes.length > 0 ? routes : DEMO_ROUTES).slice(0, 3).map(v => renderCard(v)).join('')
       }</div>`;
     } catch {
-      grid.innerHTML = `<div class="rc-grid">${DEMO_ROUTES.map(v => renderCard(v)).join('')}</div>`;
+      grid.innerHTML = `<div class="rc-grid">${DEMO_ROUTES.slice(0, 3).map(v => renderCard(v)).join('')}</div>`;
     }
   }
 
@@ -386,12 +389,14 @@
 
       const MESES_H = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
       const STATUS_BADGE_H = {
+        CONFIRMED:           'badge-confirmed',
         COMPLETED:           'badge-completed',
         CANCELLED_PASSENGER: 'badge-cancelled',
         CANCELLED_DRIVER:    'badge-cancelled',
         NO_SHOW:             'badge-cancelled',
       };
       const STATUS_LABEL_H = {
+        CONFIRMED:           'Confirmada',
         COMPLETED:           'Concluída',
         CANCELLED_PASSENGER: 'Cancelada por mim',
         CANCELLED_DRIVER:    'Cancelada pelo condutor',
@@ -414,7 +419,7 @@
             <div class="res-avatar">${avHtml}</div>
             <div class="res-info">
               <span class="badge ${STATUS_BADGE_H[b.status] || 'badge-archived'}">${STATUS_LABEL_H[b.status] || b.status}</span>
-              <div class="res-route">${esc(origem)} a ${esc(destino)}</div>
+              <div class="res-route">${esc(origem)}<span class="res-route-dest"> → ${esc(destino)}</span></div>
               <div class="res-date">${dataFmt} às ${(b.depart_time || '').slice(0,5)}</div>
             </div>
           </div>

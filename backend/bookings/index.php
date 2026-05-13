@@ -72,7 +72,6 @@ $result = transaction(function($db) use ($occurrence_id, $pickup_stop_id, $dropo
         json_out(['success' => false, 'message' => 'Já tens uma reserva nesta boleia'], 409);
     }
 
-    // Validar ordem das paragens
     $orderSt = $db->prepare("SELECT stop_order FROM route_stops WHERE id = ? AND route_id = ?");
     $orderSt->execute([$pickup_stop_id, $occ['route_id']]);
     $pickupRow  = $orderSt->fetch();

@@ -194,7 +194,19 @@
       .results-layout { grid-template-columns: 1fr; }
       .filter-sidebar { position: static; }
       .result-card { padding: 16px; gap: 12px; }
+      .filter-sidebar-inner { display: none; }
+      .filter-sidebar-inner.aberto { display: block; }
     }
+    .btn-filtros-mobile {
+      display: none;
+      width: 100%; text-align: left; justify-content: space-between;
+      background: none; border: none; color: var(--dark);
+      font-size: 1rem; font-weight: 700; padding: 0 0 12px;
+      cursor: pointer; font-family: inherit;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+    @media (max-width: 768px) { .btn-filtros-mobile { display: flex; } }
 
     .sb-wrap { position: relative; flex: 1; display: flex; align-items: center; gap: 8px; padding: 4px 12px; }
     .sb-wrap i { color: var(--muted); font-size: 1rem; flex-shrink: 0; }
@@ -300,8 +312,13 @@
 
 <div id="results-layout" class="results-layout" style="display:none">
   <aside class="filter-sidebar">
-    <p class="filter-title">Filtros</p>
+    <button class="btn-filtros-mobile" type="button" onclick="toggleFiltrosMobile(this)" aria-expanded="false">
+      <span><i class="bi bi-sliders"></i> Filtros</span>
+      <i class="bi bi-chevron-down" id="filtros-chevron"></i>
+    </button>
+    <p class="filter-title" style="display:none" id="filter-title-desk">Filtros</p>
 
+    <div class="filter-sidebar-inner">
     <div class="filter-section">
       <span class="filter-section-label">Ordenar por</span>
       <select id="ordenar" onchange="aplicarFiltros()">
@@ -323,6 +340,7 @@
       <label class="filter-option"><input type="radio" name="rating-filter" class="rating-filter" value="4.5" onchange="aplicarFiltros()"> 4.5+ <span style="color:var(--warning)">★</span></label>
       <label class="filter-option"><input type="radio" name="rating-filter" class="rating-filter" value="4.0" onchange="aplicarFiltros()"> 4.0+ <span style="color:var(--warning)">★</span></label>
       <button class="filter-clear" onclick="limparFiltros()">Limpar filtros</button>
+    </div>
     </div>
   </aside>
 
@@ -799,6 +817,29 @@
     } else { return; }
     items.forEach((el, i) => el.classList.toggle('active', i === _sugIdx[campo]));
   }
+
+  function toggleFiltrosMobile(btn) {
+    const inner  = document.querySelector('.filter-sidebar-inner');
+    const chevron = document.getElementById('filtros-chevron');
+    const aberto = inner.classList.toggle('aberto');
+    btn.setAttribute('aria-expanded', aberto);
+    chevron.className = aberto ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
+  }
+
+  function initFiltrosLayout() {
+    const mq = window.matchMedia('(min-width: 769px)');
+    const inner = document.querySelector('.filter-sidebar-inner');
+    const titleDesk = document.getElementById('filter-title-desk');
+    if (mq.matches) {
+      inner.classList.add('aberto');
+      if (titleDesk) titleDesk.style.display = '';
+    }
+    mq.addEventListener('change', e => {
+      if (e.matches) { inner.classList.add('aberto'); if (titleDesk) titleDesk.style.display = ''; }
+      else           { inner.classList.remove('aberto'); if (titleDesk) titleDesk.style.display = 'none'; }
+    });
+  }
+  initFiltrosLayout();
 
   function alterarPesquisa() {
     document.getElementById('search-bar-wrap').style.display = '';

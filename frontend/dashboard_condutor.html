@@ -17,9 +17,10 @@
       align-items: center;
       justify-content: space-between;
       gap: 20px;
-      margin-bottom: 16px;
+      margin-bottom: 28px;
       flex-wrap: wrap;
     }
+    .driver-profile-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
     .driver-profile-left { display: flex; align-items: center; gap: 20px; }
     .driver-avatar {
       width: 80px; height: 80px; border-radius: 50%;
@@ -48,32 +49,29 @@
     }
     .btn-edit-perfil:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); text-decoration: none; }
 
-    .driver-stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 24px;
-    }
-    .driver-stat-card {
+    .driver-stats-bar {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 20px 22px;
+      padding: 16px 24px;
       box-shadow: var(--shadow);
       display: flex;
       align-items: center;
-      gap: 18px;
+      gap: 0;
+      margin-bottom: 24px;
     }
+    .driver-stat-item { display: flex; align-items: center; gap: 14px; flex: 1; }
+    .driver-stat-sep  { width: 1px; height: 44px; background: var(--border); flex-shrink: 0; margin: 0 24px; }
     .dsi {
-      width: 52px; height: 52px; border-radius: 50%;
+      width: 42px; height: 42px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.35rem; flex-shrink: 0;
+      font-size: 1.1rem; flex-shrink: 0;
     }
     .dsi-success { background: var(--success-light); color: var(--success); }
     .dsi-indigo  { background: #EEF2FF; color: #4F46E5; }
     .driver-stat-label { font-size: 0.8rem; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
     .driver-stat-value {
-      font-size: 1.8rem; font-weight: 800; color: var(--dark);
+      font-size: 1.5rem; font-weight: 800; color: var(--dark);
       font-family: 'Plus Jakarta Sans','Inter',sans-serif;
       line-height: 1; letter-spacing: -0.02em;
     }
@@ -175,13 +173,6 @@
     .veiculo-label { color: var(--muted); font-weight: 500; }
     .veiculo-value { font-weight: 600; color: var(--dark); }
 
-    .dash-cta {
-      background: linear-gradient(135deg, var(--dark) 0%, #1e3a8a 100%);
-      border-radius: 16px; padding: 22px 28px; margin-bottom: 24px;
-      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-    }
-    .dash-cta-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 3px; font-family: 'Plus Jakarta Sans','Inter',sans-serif; }
-    .dash-cta-sub   { font-size: 0.82rem; color: rgba(255,255,255,0.65); }
 
     @media (max-width: 640px) {
       .driver-stats-grid { grid-template-columns: 1fr; }
@@ -223,30 +214,26 @@
       </p>
     </div>
   </div>
-  <a href="perfil.html" class="btn-edit-perfil"><i class="bi bi-pencil-square"></i> Editar Perfil</a>
-</div>
-
-<div class="dash-cta">
-  <div>
-    <p class="dash-cta-title">Aumenta os teus ganhos</p>
-    <p class="dash-cta-sub">Publica uma nova rota e chega a mais passageiros.</p>
+  <div class="driver-profile-actions">
+    <a href="publicar.html" class="nav-btn"><i class="bi bi-plus-circle"></i> Nova rota</a>
+    <a href="perfil.html" class="btn-edit-perfil"><i class="bi bi-pencil-square"></i> Editar Perfil</a>
   </div>
-  <a href="publicar.html" class="nav-btn" style="flex-shrink:0"><i class="bi bi-plus-circle-fill"></i> Nova rota</a>
 </div>
 
-<div class="driver-stats-grid">
-  <div class="driver-stat-card">
+<div class="driver-stats-bar">
+  <div class="driver-stat-item">
     <div class="dsi dsi-success"><i class="bi bi-cash-stack"></i></div>
     <div>
       <div class="driver-stat-label">Ganhos</div>
-      <div class="driver-stat-value" id="stat-ganhos"><div class="skeleton" style="width:90px;height:30px"></div></div>
+      <div class="driver-stat-value" id="stat-ganhos"><div class="skeleton" style="width:80px;height:24px"></div></div>
     </div>
   </div>
-  <div class="driver-stat-card">
+  <div class="driver-stat-sep"></div>
+  <div class="driver-stat-item">
     <div class="dsi dsi-indigo"><i class="bi bi-signpost-2-fill"></i></div>
     <div>
       <div class="driver-stat-label">Rotas Publicadas</div>
-      <div class="driver-stat-value" id="stat-rotas"><div class="skeleton" style="width:40px;height:30px"></div></div>
+      <div class="driver-stat-value" id="stat-rotas"><div class="skeleton" style="width:36px;height:24px"></div></div>
     </div>
   </div>
 </div>
@@ -429,7 +416,7 @@
             <span class="badge badge-${(r.status||'').toLowerCase()}">${fmtRotaStatus(r.status)}</span>
           </div>
           <div class="rota-card-right">
-            <span class="rota-seats"><i class="bi bi-record-circle"></i> ${r.total_seats} Lugares</span>
+            <span class="rota-seats"><i class="bi bi-record-circle"></i> ${r.total_seats} Lugar${r.total_seats != 1 ? 'es' : ''}</span>
             <button class="btn-gerir" onclick="toggleGerir('${r.id}')"><i class="bi bi-gear-fill"></i> Gerir</button>
           </div>
         </div>
@@ -441,6 +428,16 @@
           <span class="gerir-panel-meta"><i class="bi bi-clock"></i> ${r.depart_time?.slice(0,5)} &nbsp;·&nbsp; ${diasSemana(r.recurrence)} &nbsp;·&nbsp; ${Number(r.price_per_seat).toFixed(2)} €/pessoa</span>
         </div>`;
     }).join('');
+
+    if (total < 3) {
+      div.innerHTML += `<div style="margin-top:16px;background:var(--surface);border:1px dashed var(--border);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:14px">
+        <i class="bi bi-lightning-charge-fill" style="color:var(--warning);font-size:1.3rem;flex-shrink:0"></i>
+        <div style="flex:1">
+          <p style="margin:0 0 8px;font-weight:600;color:var(--dark);font-size:0.9rem">Chega a mais passageiros</p>
+          <a href="publicar.html" class="btn-sm btn-info"><i class="bi bi-plus-circle"></i> Publicar nova rota</a>
+        </div>
+      </div>`;
+    }
   }
 
   function toggleGerir(routeId) {

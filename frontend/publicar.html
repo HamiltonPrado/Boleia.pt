@@ -14,7 +14,7 @@
       gap: 24px;
       align-items: start;
     }
-    .publish-sidebar { position: sticky; top: 110px; }
+    .publish-sidebar { position: static; }
     .publish-map-col  { position: sticky; top: 110px; }
 
     .pub-card {
@@ -28,15 +28,16 @@
     .pub-card > h3 { margin: 0 0 14px; font-size: 0.95rem; display:flex; align-items:center; gap:7px; }
     .pub-hint { font-size: 0.8rem; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
     .pub-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .pub-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
     .pub-map-card { display: flex; flex-direction: column; min-height: 580px; }
     .pub-map-card #mapa { flex: 1; border-radius: 12px; overflow: hidden; min-height: 480px; }
 
-    .dias-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .dias-grid { display: flex; gap: 6px; flex-wrap: nowrap; margin-top: 8px; }
     .dias-grid label {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-weight: 500; cursor: pointer; font-size: 0.875rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 500; cursor: pointer; font-size: 0.8rem;
       background: var(--bg); border: 1px solid var(--border);
-      border-radius: 8px; padding: 5px 10px;
+      border-radius: 8px; padding: 5px 8px; flex: 1;
       transition: background 120ms, border-color 120ms;
     }
     .dias-grid label:has(input:checked) { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
@@ -103,6 +104,40 @@
     }
     .btn-add-paragem:hover { background: var(--primary-light) !important; }
 
+    .wizard-header {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 20px; box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+    .wizard-steps  { display: flex; align-items: center; }
+    .ws { display: flex; align-items: center; gap: 8px; }
+    .ws-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--border); color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+      transition: background 200ms, color 200ms;
+    }
+    .ws.active .ws-num { background: var(--primary); color: #fff; }
+    .ws.done   .ws-num { background: var(--success);  color: #fff; }
+    .ws-label { font-size: 0.8rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .ws.active .ws-label { color: var(--primary); }
+    .ws.done   .ws-label { color: var(--success); }
+    .ws-line { flex: 1; height: 2px; background: var(--border); margin: 0 10px; transition: background 200ms; min-width: 20px; }
+    .ws-line.done { background: var(--success); }
+    .wizard-title { font-size: 1.5rem; margin-bottom: 20px; }
+    .wizard-nav { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+    button.nav-btn {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+      color: #fff !important; border: none !important;
+    }
+    button.nav-btn:hover { background: linear-gradient(135deg, #2563EB 0%, #1e40af 100%) !important; }
+    .publish-layout.sem-mapa {
+      grid-template-columns: 1fr; max-width: 520px; margin: 0 auto;
+    }
+    .publish-layout.sem-mapa .publish-map-col { display: none; }
+    .publish-layout.sem-mapa .publish-sidebar { position: static; }
+
     @media (max-width: 960px) {
       .publish-layout { grid-template-columns: 1fr; }
       .publish-sidebar, .publish-map-col { position: static; }
@@ -131,130 +166,132 @@
   </header>
 </div>
 
+<div class="wizard-header">
+  <div class="wizard-steps">
+    <div class="ws active" data-step="1"><div class="ws-num">1</div><span class="ws-label">Rota</span></div>
+    <div class="ws-line" id="wl-1"></div>
+    <div class="ws" data-step="2"><div class="ws-num">2</div><span class="ws-label">Horário</span></div>
+    <div class="ws-line" id="wl-2"></div>
+    <div class="ws" data-step="3"><div class="ws-num">3</div><span class="ws-label">Detalhes</span></div>
+  </div>
+</div>
+
 <div class="publish-layout">
 
-  
   <div class="publish-sidebar">
-    <h2 style="font-size:1.5rem; margin-bottom:6px;">Para onde vais?</h2>
-    <p style="color:var(--muted); margin-bottom:20px; font-size:0.875rem;">Preenche os detalhes da rota. O mapa atualiza automaticamente.</p>
 
-    <form onsubmit="publicar(event)" id="form-publicar">
+    <h2 class="wizard-title">Para onde vais?</h2>
 
-      
-      <div class="pub-card">
-        <h3><i class="bi bi-geo-alt-fill" style="color:var(--primary)"></i> Rota</h3>
-        <p class="pub-hint">Escreve o endereço e clica em <b>Localizar</b>, ou clica diretamente no mapa para posicionar a paragem selecionada.</p>
+    <form onsubmit="publicar(event)" id="form-publicar" novalidate>
 
-        <div id="paragens">
-          <div class="paragem" data-index="0">
-            <div class="paragem-header">
-              <span class="paragem-label"><b>Origem</b></span>
-              <button type="button" onclick="selecionarParagem(0)" id="btn-sel-0" class="btn-sel" title="Selecionar no mapa">
-                <i class="bi bi-cursor-fill"></i>
-              </button>
-            </div>
-            <div class="paragem-input-row">
-              <div class="paragem-input-wrap">
-                <input type="text" name="address" placeholder="Ex: Sete Rios, Lisboa" required autocomplete="off"
-                  oninput="pubSugerir(this)" onblur="pubFechar(this,300)" onkeydown="pubNavSug(event,this)" />
-                <div class="pub-suggestions" style="display:none"></div>
+      <div class="passo" data-passo="1">
+        <div class="pub-card">
+          <h3><i class="bi bi-geo-alt-fill" style="color:var(--primary)"></i> Rota</h3>
+          <p class="pub-hint">Escreve o endereço ou clica diretamente no mapa.</p>
+          <div id="paragens">
+            <div class="paragem" data-index="0">
+              <div class="paragem-header">
+                <span class="paragem-label"><b>Origem</b></span>
+                <button type="button" onclick="selecionarParagem(0)" id="btn-sel-0" class="btn-sel" title="Selecionar no mapa"><i class="bi bi-cursor-fill"></i></button>
               </div>
-              <button type="button" onclick="geocodificar(0)"><i class="bi bi-geo-alt-fill"></i> Localizar</button>
+              <div class="paragem-input-row">
+                <div class="paragem-input-wrap">
+                  <input type="text" name="address" placeholder="Ex: Sete Rios, Lisboa" autocomplete="off"
+                    oninput="pubSugerir(this)" onblur="pubFechar(this,300)" onkeydown="pubNavSug(event,this)" />
+                  <div class="pub-suggestions" style="display:none"></div>
+                </div>
+                <button type="button" onclick="geocodificar(0)"><i class="bi bi-geo-alt-fill"></i> Localizar</button>
+              </div>
+              <input type="hidden" name="lat" value="0" /><input type="hidden" name="lng" value="0" />
             </div>
-            <input type="hidden" name="lat" value="0" />
-            <input type="hidden" name="lng" value="0" />
+            <div class="paragem" data-index="1">
+              <div class="paragem-header">
+                <span class="paragem-label"><b>Destino</b></span>
+                <button type="button" onclick="selecionarParagem(1)" id="btn-sel-1" class="btn-sel" title="Selecionar no mapa"><i class="bi bi-cursor-fill"></i></button>
+              </div>
+              <div class="paragem-input-row">
+                <div class="paragem-input-wrap">
+                  <input type="text" name="address" placeholder="Ex: Campanhã, Porto" autocomplete="off"
+                    oninput="pubSugerir(this)" onblur="pubFechar(this,300)" onkeydown="pubNavSug(event,this)" />
+                  <div class="pub-suggestions" style="display:none"></div>
+                </div>
+                <button type="button" onclick="geocodificar(1)"><i class="bi bi-geo-alt-fill"></i> Localizar</button>
+              </div>
+              <input type="hidden" name="lat" value="0" /><input type="hidden" name="lng" value="0" />
+            </div>
           </div>
+          <button type="button" onclick="adicionarParagem()" class="btn-add-paragem">
+            <i class="bi bi-plus-circle"></i> Adicionar paragem intermédia
+          </button>
+          <p class="pub-hint" style="margin-top:12px;margin-bottom:0;">
+            <i class="bi bi-cursor-fill" style="color:var(--primary)"></i>
+            Paragem ativa no mapa: <b id="sel-label">Origem</b>
+          </p>
+        </div>
+      </div>
 
-          <div class="paragem" data-index="1">
-            <div class="paragem-header">
-              <span class="paragem-label"><b>Destino</b></span>
-              <button type="button" onclick="selecionarParagem(1)" id="btn-sel-1" class="btn-sel" title="Selecionar no mapa">
-                <i class="bi bi-cursor-fill"></i>
-              </button>
+      <div class="passo" data-passo="2" style="display:none">
+        <div class="pub-card">
+          <h3><i class="bi bi-clock-fill" style="color:var(--primary)"></i> Horário</h3>
+          <div class="pub-grid-3" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label>Hora de partida</label>
+              <input type="time" id="hora" />
             </div>
-            <div class="paragem-input-row">
-              <div class="paragem-input-wrap">
-                <input type="text" name="address" placeholder="Ex: Campanhã, Porto" required autocomplete="off"
-                  oninput="pubSugerir(this)" onblur="pubFechar(this,300)" onkeydown="pubNavSug(event,this)" />
-                <div class="pub-suggestions" style="display:none"></div>
-              </div>
-              <button type="button" onclick="geocodificar(1)"><i class="bi bi-geo-alt-fill"></i> Localizar</button>
+            <div class="form-group">
+              <label>Data de início</label>
+              <input type="date" id="valid_from" />
             </div>
-            <input type="hidden" name="lat" value="0" />
-            <input type="hidden" name="lng" value="0" />
+            <div class="form-group">
+              <label>Data de fim <span style="font-weight:400;color:var(--muted)">(opc.)</span></label>
+              <input type="date" id="valid_until" />
+            </div>
+          </div>
+          <fieldset>
+            <legend>Dias da semana</legend>
+            <div class="dias-grid">
+              <label><input type="checkbox" name="dia" value="1" /> Seg</label>
+              <label><input type="checkbox" name="dia" value="2" /> Ter</label>
+              <label><input type="checkbox" name="dia" value="3" /> Qua</label>
+              <label><input type="checkbox" name="dia" value="4" /> Qui</label>
+              <label><input type="checkbox" name="dia" value="5" /> Sex</label>
+              <label><input type="checkbox" name="dia" value="6" /> Sáb</label>
+              <label><input type="checkbox" name="dia" value="0" /> Dom</label>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
+      <div class="passo" data-passo="3" style="display:none">
+        <div class="pub-card">
+          <h3><i class="bi bi-people-fill" style="color:var(--primary)"></i> Lugares & Preço</h3>
+          <div class="pub-grid-2" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label>Lugares disponíveis</label>
+              <select id="lugares">
+                <option>1</option><option>2</option><option>3</option><option>4</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Preço por pessoa (€)</label>
+              <input type="number" id="preco" min="0" step="0.01" placeholder="Ex: 12.00" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Observações <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+            <textarea id="obs" rows="2" placeholder="Ex: Tenho espaço para bagagem..."></textarea>
           </div>
         </div>
+      </div>
 
-        <button type="button" onclick="adicionarParagem()" class="btn-add-paragem">
-          <i class="bi bi-plus-circle"></i> Adicionar paragem intermédia
+      <div class="wizard-nav">
+        <button type="button" id="btn-anterior" class="btn-sm btn-muted" onclick="irParaPasso(passoAtual-1)" style="display:none">
+          <i class="bi bi-arrow-left"></i> Anterior
         </button>
-
-        <p class="pub-hint" style="margin-top:12px; margin-bottom:0;">
-          <i class="bi bi-cursor-fill" style="color:var(--primary)"></i>
-          Paragem ativa no mapa: <b id="sel-label">Origem</b>
-        </p>
+        <button type="button" id="btn-seguinte" class="nav-btn" onclick="irParaPasso(passoAtual+1)" style="margin-left:auto">
+          Seguinte <i class="bi bi-arrow-right"></i>
+        </button>
       </div>
-
-      
-      <div class="pub-card">
-        <h3><i class="bi bi-clock-fill" style="color:var(--primary)"></i> Horário</h3>
-
-        <div class="pub-grid-2" style="margin-bottom:14px;">
-          <div class="form-group">
-            <label>Hora de partida</label>
-            <input type="time" id="hora" required />
-          </div>
-          <div class="form-group">
-            <label>Data de início</label>
-            <input type="date" id="valid_from" required />
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-bottom:14px;">
-          <label>Data de fim <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
-          <input type="date" id="valid_until" />
-        </div>
-
-        <fieldset>
-          <legend>Dias da semana</legend>
-          <div class="dias-grid">
-            <label><input type="checkbox" name="dia" value="1" /> Seg</label>
-            <label><input type="checkbox" name="dia" value="2" /> Ter</label>
-            <label><input type="checkbox" name="dia" value="3" /> Qua</label>
-            <label><input type="checkbox" name="dia" value="4" /> Qui</label>
-            <label><input type="checkbox" name="dia" value="5" /> Sex</label>
-            <label><input type="checkbox" name="dia" value="6" /> Sáb</label>
-            <label><input type="checkbox" name="dia" value="0" /> Dom</label>
-          </div>
-        </fieldset>
-      </div>
-
-      
-      <div class="pub-card">
-        <h3><i class="bi bi-people-fill" style="color:var(--primary)"></i> Lugares & Preço</h3>
-
-        <div class="pub-grid-2" style="margin-bottom:14px;">
-          <div class="form-group">
-            <label>Lugares disponíveis</label>
-            <select id="lugares">
-              <option>1</option><option>2</option><option>3</option><option>4</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Preço por pessoa (€)</label>
-            <input type="number" id="preco" min="0" step="0.01" placeholder="Ex: 12.00" required />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Observações <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
-          <textarea id="obs" rows="2" placeholder="Ex: Tenho espaço para bagagem..."></textarea>
-        </div>
-      </div>
-
-      <button type="submit" style="width:100%; justify-content:center; padding:13px; border-radius:9999px; font-size:0.95rem; font-weight:600; font-family:'Plus Jakarta Sans','Inter',sans-serif;">
-        <i class="bi bi-send-fill"></i> Publicar Viagem
-      </button>
 
       <div id="msg-publicar" class="alert" style="display:none; margin-top:16px;"></div>
 
@@ -267,8 +304,7 @@
 
   
   <div class="publish-map-col">
-    <div class="pub-card pub-map-card">
-      <h3><i class="bi bi-map-fill" style="color:var(--primary)"></i> Pré-visualização da Rota</h3>
+    <div class="pub-card pub-map-card" style="padding:10px;">
       <div id="mapa"></div>
     </div>
   </div>
@@ -542,9 +578,16 @@
       msg.style.display = 'flex'; return;
     }
 
+    const preco = parseFloat(document.getElementById('preco').value);
+    if (isNaN(preco) || preco < 0) {
+      msg.className = 'alert alert-warning';
+      msg.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Indica um preço válido.';
+      msg.style.display = 'flex'; return;
+    }
+
     const body = {
       total_seats:    parseInt(document.getElementById('lugares').value),
-      price_per_seat: parseFloat(document.getElementById('preco').value),
+      price_per_seat: preco,
       depart_time:    document.getElementById('hora').value.slice(0, 5),
       recurrence:     { days_of_week: dias },
       valid_from:     document.getElementById('valid_from').value,
@@ -568,6 +611,75 @@
       msg.innerHTML = `<i class="bi bi-x-circle-fill"></i> ${esc(data.message)}`;
       msg.style.display = 'flex';
     }
+  }
+
+  let passoAtual = 1;
+  const TITULOS  = ['', 'Para onde vais?', 'Quando vais?', 'Últimos detalhes'];
+
+  function irParaPasso(n) {
+    if (n > passoAtual && !validarPasso(passoAtual)) return;
+    if (n < 1 || n > 3) return;
+
+    document.querySelectorAll('.passo').forEach(p => {
+      p.style.display = parseInt(p.dataset.passo) === n ? '' : 'none';
+    });
+
+    document.querySelectorAll('.ws').forEach(ws => {
+      const s = parseInt(ws.dataset.step);
+      ws.classList.remove('active', 'done');
+      if (s === n) ws.classList.add('active');
+      else if (s < n) ws.classList.add('done');
+    });
+    for (let i = 1; i <= 2; i++) {
+      document.getElementById(`wl-${i}`).classList.toggle('done', i < n);
+    }
+
+    document.querySelector('.wizard-title').textContent = TITULOS[n];
+
+    const layout = document.querySelector('.publish-layout');
+    layout.classList.toggle('sem-mapa', n > 1);
+    document.querySelector('.wizard-header').style.maxWidth = n > 1 ? '520px' : '';
+    document.querySelector('.wizard-header').style.margin   = n > 1 ? '0 auto 24px' : '0 0 24px';
+    if (n === 1 && mapaIniciado) setTimeout(() => mapa.invalidateSize(), 50);
+
+    document.getElementById('btn-anterior').style.display = n > 1 ? '' : 'none';
+
+    const btnSeg = document.getElementById('btn-seguinte');
+    if (n === 3) {
+      btnSeg.innerHTML = '<i class="bi bi-send-fill"></i> Publicar Viagem';
+      btnSeg.type = 'submit';
+      btnSeg.removeAttribute('onclick');
+    } else {
+      btnSeg.innerHTML = 'Seguinte <i class="bi bi-arrow-right"></i>';
+      btnSeg.type = 'button';
+      btnSeg.setAttribute('onclick', 'irParaPasso(passoAtual+1)');
+    }
+
+    passoAtual = n;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function validarPasso(n) {
+    if (n === 1) {
+      for (const p of document.querySelectorAll('.paragem')) {
+        if (!p.querySelector('[name="address"]').value.trim()) {
+          toast('Preenche o endereço de todas as paragens.', 'warning');
+          return false;
+        }
+      }
+    }
+    if (n === 2) {
+      if (!document.getElementById('hora').value) {
+        toast('Seleciona a hora de partida.', 'warning'); return false;
+      }
+      if (!document.getElementById('valid_from').value) {
+        toast('Seleciona a data de início.', 'warning'); return false;
+      }
+      if (![...document.querySelectorAll('input[name="dia"]:checked')].length) {
+        toast('Seleciona pelo menos um dia da semana.', 'warning'); return false;
+      }
+    }
+    return true;
   }
 
   async function sair(e) {

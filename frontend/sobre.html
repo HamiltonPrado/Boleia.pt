@@ -262,6 +262,21 @@
   </div>
 </section>
 
+<div class="stats-band">
+  <div class="stat-sep">
+    <span class="stat-num" id="stat-viagens">1.200+</span>
+    <span class="stat-label">Viagens realizadas</span>
+  </div>
+  <div class="stat-sep">
+    <span class="stat-num" id="stat-rotas">340+</span>
+    <span class="stat-label">Rotas ativas</span>
+  </div>
+  <div>
+    <span class="stat-num" id="stat-users">2.800+</span>
+    <span class="stat-label">Utilizadores registados</span>
+  </div>
+</div>
+
 <div class="sobre-missao-layout">
   <div>
     <p class="sml-label">A nossa missão</p>
@@ -354,9 +369,20 @@
       <a href="#" onclick="fetch('../backend/auth/logout.php',{method:'POST'}).then(()=>location.href='login.html')" class="nav-item"><i class="bi bi-box-arrow-right"></i> Sair</a>`;
   }).catch(() => {});
 
-  document.getElementById('stat-viagens').textContent = '1.200+';
-  document.getElementById('stat-rotas').textContent   = '340+';
-  document.getElementById('stat-users').textContent   = '2.800+';
+  fetch('../backend/routes/public_stats.php')
+    .then(r => r.json())
+    .then(d => {
+      if (d && typeof d.total_trips !== 'undefined') {
+        document.getElementById('stat-viagens').textContent = Number(d.total_trips).toLocaleString('pt-PT') + '+';
+        document.getElementById('stat-rotas').textContent   = Number(d.active_routes).toLocaleString('pt-PT') + '+';
+        document.getElementById('stat-users').textContent   = Number(d.total_users).toLocaleString('pt-PT') + '+';
+      }
+    })
+    .catch(() => {
+      document.getElementById('stat-viagens').textContent = '1.200+';
+      document.getElementById('stat-rotas').textContent   = '340+';
+      document.getElementById('stat-users').textContent   = '2.800+';
+    });
 </script>
 
 </body>

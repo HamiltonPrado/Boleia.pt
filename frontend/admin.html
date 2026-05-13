@@ -258,6 +258,7 @@
       .admin-nav-item { font-size: 0.8rem; padding: 7px 10px; }
       .admin-hero-stats, .admin-sec-stats { grid-template-columns: 1fr 1fr; }
     }
+    @media (max-width: 768px) { .admin-sidebar { position: static; } }
     @media (max-width: 560px) {
       .admin-hero-stats { grid-template-columns: 1fr; }
       .admin-sec-stats  { grid-template-columns: 1fr 1fr; }
@@ -875,6 +876,16 @@
   function filtrarReclamacoes(status) {
     const list = status ? (window._allComplaints || []).filter(c => c.status === status) : (window._allComplaints || []);
     document.getElementById('cpl-lista').innerHTML = renderReclamacoes(list);
+    ['cpl-f-all','cpl-f-pending','cpl-f-reviewed','cpl-f-closed'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.classList.remove('active', 'filter-btn');
+    });
+    const activeMap = { '': 'cpl-f-all', 'PENDING': 'cpl-f-pending', 'REVIEWED': 'cpl-f-reviewed', 'CLOSED': 'cpl-f-closed' };
+    const activeId  = activeMap[status];
+    if (activeId) {
+      const btn = document.getElementById(activeId);
+      if (btn) { btn.classList.add('filter-btn', 'active'); }
+    }
   }
 
   async function updateCplStatus(e, id, status) {

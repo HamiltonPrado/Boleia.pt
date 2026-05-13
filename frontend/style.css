@@ -340,7 +340,7 @@ nav a.nav-active {
 .tabs {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin: 20px 0 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -361,6 +361,7 @@ nav a.nav-active {
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: color 150ms, background 150ms, border-color 150ms;
   font-family: inherit;
 }
@@ -896,13 +897,8 @@ nav + hr { margin-top: 16px; margin-bottom: 16px; }
 }
 
 
-/* =========================================================
-   REDESIGN: Floating Navbar, Cards, Auth
-   ========================================================= */
-
 h1, h2, h3 { font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; }
 
-/* --- Floating Navbar --- */
 .navbar-wrapper {
   position: fixed;
   top: 14px;
@@ -1098,13 +1094,11 @@ h1, h2, h3 { font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; }
 }
 
 
-/* --- Navbar scroll shadow --- */
 .navbar.scrolled {
   box-shadow: 0 6px 28px rgba(0,0,0,.12), 0 1px 3px rgba(0,0,0,.08);
 }
 
 
-/* --- Badge hot (últimas vagas) --- */
 .badge-hot {
   background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
   color: var(--danger);
@@ -1117,7 +1111,6 @@ h1, h2, h3 { font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; }
 }
 
 
-/* --- Stat icon --- */
 .stat-icon {
   width: 36px; height: 36px;
   border-radius: 10px;
@@ -1131,7 +1124,6 @@ h1, h2, h3 { font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; }
 .stat-card.c-muted    .stat-icon { background: #F1F5F9; color: var(--muted); }
 
 
-/* --- Footer multi-column --- */
 footer.site-footer {
   margin-top: 64px;
   border-top: 1px solid var(--border);
@@ -1192,7 +1184,6 @@ footer.site-footer {
 
 
 
-/* --- Auth Card --- */
 .auth-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1258,7 +1249,6 @@ footer.site-footer {
   .auth-card { padding: 28px 20px; border-radius: 16px; }
 }
 
-/* --- Premium Trip Cards --- */
 .trip-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -1330,7 +1320,6 @@ footer.site-footer {
 }
 .card-price small { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
 
-/* Route Timeline inside cards */
 .route-timeline {
   position: relative;
   padding-left: 20px;
@@ -1416,3 +1405,25 @@ footer.site-footer {
   .hero-search { flex-direction: column; border-radius: 16px; }
   .trip-cards { grid-template-columns: 1fr; }
 }
+
+.reserva-route {
+  font-weight: 700; font-size: 1rem; color: var(--dark);
+  margin: 5px 0 3px;
+  white-space: normal;
+  overflow: visible;
+}
+.reserva-route-dest {
+  font-size: 0.88rem; font-weight: 500; color: var(--muted);
+}
+
+.map-pin { border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+.map-pin-origin { background: var(--success, #16a34a); }
+.map-pin-dest   { background: var(--primary, #2563EB); }
+.map-pin-stop   { background: var(--warning, #d97706); }
+
+.avatar-upload-hint {
+  display: block; font-size: 0.75rem; color: var(--primary);
+  margin-top: 6px; cursor: pointer; text-align: center;
+}
+
+.filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }

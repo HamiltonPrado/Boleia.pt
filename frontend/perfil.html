@@ -236,15 +236,13 @@
         <div class="info-avatar-overlay"><i class="bi bi-camera-fill"></i></div>
         <input type="file" id="avatar-input" accept=".jpg,.jpeg,.png" style="display:none" onchange="uploadAvatar(this)">
       </div>
+      <span class="avatar-upload-hint" onclick="document.getElementById('avatar-input').click()">Alterar foto</span>
       <div class="info-profile-name" id="perfil-nome">
         <span class="skeleton" style="width:130px;height:16px;display:inline-block;border-radius:5px"></span>
       </div>
       <div class="info-profile-role" id="perfil-role-text">
         <span class="skeleton" style="width:80px;height:12px;display:inline-block;border-radius:4px"></span>
       </div>
-      <button type="button" class="info-alterar-foto-btn" onclick="document.getElementById('avatar-input').click()">
-        <i class="bi bi-camera"></i> Alterar foto
-      </button>
       <div class="info-stats" id="perfil-stats"></div>
     </div>
 
