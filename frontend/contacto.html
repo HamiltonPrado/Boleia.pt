@@ -6,97 +6,7 @@
   <title>Boleia.pt — Contacto</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <style>
-    .contact-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.6fr;
-      gap: 28px;
-      align-items: start;
-      margin-top: 8px;
-    }
-    .contact-info-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 28px 24px;
-      box-shadow: var(--shadow);
-    }
-    .contact-info-card h3 {
-      margin-top: 0; margin-bottom: 20px;
-      font-size: 1rem; font-weight: 700; color: var(--dark);
-    }
-    .contact-item {
-      display: flex; align-items: flex-start; gap: 14px;
-      margin-bottom: 20px;
-    }
-    .contact-item:last-child { margin-bottom: 0; }
-    .ci-icon {
-      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem;
-    }
-    .ci-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
-    .ci-value { font-size: 0.875rem; font-weight: 500; color: var(--dark); }
-
-    .contact-form-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 32px 28px;
-      box-shadow: var(--shadow);
-    }
-    .contact-form-card h3 { margin-top: 0; margin-bottom: 6px; font-size: 1.1rem; }
-    .contact-form-card .form-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 24px; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .ct-group { margin-bottom: 18px; }
-    .ct-label {
-      display: block; font-size: 0.82rem; font-weight: 600;
-      color: var(--dark); margin-bottom: 6px;
-    }
-    .ct-input-wrap { position: relative; }
-    .ct-input-wrap i {
-      position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
-      color: var(--muted); font-size: 0.95rem; pointer-events: none;
-    }
-    .ct-input-wrap textarea + i,
-    .ct-input-wrap.is-textarea i { top: 14px; transform: none; }
-    .ct-input {
-      width: 100%; max-width: 100%;
-      padding: 11px 14px 11px 38px;
-      border: 1.5px solid var(--border); border-radius: 10px;
-      font-size: 0.875rem; font-family: inherit;
-      color: var(--text); background: var(--bg);
-      transition: border-color 180ms, box-shadow 180ms; outline: none;
-      min-height: 44px;
-    }
-    .ct-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: var(--surface); }
-    .ct-input::placeholder { color: #CBD5E1; }
-    .ct-textarea {
-      width: 100%; max-width: 100%;
-      padding: 11px 14px 11px 38px;
-      border: 1.5px solid var(--border); border-radius: 10px;
-      font-size: 0.875rem; font-family: inherit;
-      color: var(--text); background: var(--bg);
-      transition: border-color 180ms, box-shadow 180ms; outline: none;
-      resize: none; min-height: 120px; line-height: 1.6;
-    }
-    .ct-textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: var(--surface); }
-    .ct-textarea::placeholder { color: #CBD5E1; }
-    .ct-btn {
-      width: 100%; padding: 14px; border-radius: 99px; border: none;
-      background: var(--primary); color: #fff;
-      font-size: 0.9rem; font-weight: 700; font-family: inherit;
-      cursor: pointer; transition: background 150ms; margin-top: 6px;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .ct-btn:hover { background: var(--primary-dark); }
-    #contacto-sucesso { display: none; }
-
-    @media (max-width: 700px) {
-      .contact-grid { grid-template-columns: 1fr; }
-      .form-row { grid-template-columns: 1fr; }
-    }
-  </style>
+  <link rel="stylesheet" href="css/contacto.css" />
 </head>
 <body>
 
@@ -227,53 +137,7 @@
 </footer>
 
 <script src="utils.js"></script>
-<script>
-  fetch('../backend/auth/me.php').then(r => r.json()).then(d => {
-    if (!d.user) return;
-    const nav = document.querySelector('.user-actions');
-    const r   = d.user.role;
-    const dash = (r === 'DRIVER' || r === 'BOTH') ? 'dashboard_condutor.html' : 'dashboard.html';
-    nav.innerHTML = `
-      <a href="${dash}" class="nav-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
-      <a href="perfil.html" class="nav-item"><i class="bi bi-person-circle"></i> Perfil</a>
-      <a href="#" onclick="fetch('../backend/auth/logout.php',{method:'POST'}).then(()=>location.href='login.html')" class="nav-item"><i class="bi bi-box-arrow-right"></i> Sair</a>`;
-    if (d.user.full_name) document.getElementById('ct-nome').value  = d.user.full_name;
-    if (d.user.email)     document.getElementById('ct-email').value = d.user.email;
-  }).catch(() => {});
-
-  async function enviarContacto(e) {
-    e.preventDefault();
-    const nome     = document.getElementById('ct-nome').value.trim();
-    const email    = document.getElementById('ct-email').value.trim();
-    const assunto  = document.getElementById('ct-assunto').value;
-    const mensagem = document.getElementById('ct-mensagem').value.trim();
-
-    if (!nome || !email) { toast('Preenche o nome e o email.', 'warning'); return; }
-    if (!mensagem)       { toast('Escreve uma mensagem.', 'warning'); return; }
-
-    const btn = e.target;
-    btnLoad(btn, true, 'A enviar...');
-
-    try {
-      const res  = await fetch('../backend/contact.php', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ nome, email, assunto, mensagem })
-      });
-      const data = await res.json();
-      if (data.success) {
-        document.getElementById('contacto-form').style.display    = 'none';
-        document.getElementById('contacto-sucesso').style.display = 'flex';
-      } else {
-        toast(data.message || 'Erro ao enviar. Tenta novamente.', 'danger');
-        btnLoad(btn, false);
-      }
-    } catch {
-      toast('Erro de ligação. Verifica a tua internet e tenta novamente.', 'danger');
-      btnLoad(btn, false);
-    }
-  }
-</script>
+<script src="js/contacto.js"></script>
 
 </body>
 </html>

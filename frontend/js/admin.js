@@ -1,0 +1,610 @@
+  async function sair(e) {
+    e.preventDefault();
+    await fetch('../backend/auth/logout.php', { method: 'POST' });
+    window.location.href = 'login.html';
+  }
+
+  function mostrarAba(e, id) {
+    e.preventDefault();
+    const abas = ['aba-stats','aba-utilizadores','aba-condutores','aba-documentos','aba-atividade','aba-reclamacoes','aba-estatisticas'];
+    abas.forEach(a => document.getElementById(a).style.display = (a === id) ? '' : 'none');
+    document.querySelectorAll('.admin-nav-item').forEach(el => el.classList.remove('active'));
+    const navItem = document.getElementById(`nav-${id}`);
+    if (navItem) navItem.classList.add('active');
+    if (id === 'aba-utilizadores')  carregarUtilizadores(1);
+    if (id === 'aba-condutores')    carregarCondutores();
+    if (id === 'aba-documentos')    carregarDocumentos();
+    if (id === 'aba-atividade')     carregarAtividade();
+    if (id === 'aba-reclamacoes')   carregarReclamacoes();
+    if (id === 'aba-estatisticas')  carregarEstatisticas();
+  }
+
+  async function init() {
+    const me = await fetch('../backend/auth/me.php');
+    if (!me.ok) { window.location.href = 'login.html'; return; }
+    const { user } = await me.json();
+    if (user.role !== 'ADMIN') { alert('Acesso negado.'); window.location.href = 'dashboard.html'; return; }
+    await Promise.all([carregarStats(), carregarRecentUsers(), carregarBadgeReclamacoes()]);
+  }
+
+  async function carregarStats() {
+    const res  = await fetch('../backend/admin/stats.php');
+    const data = await res.json();
+    const div  = document.getElementById('stats-conteudo');
+    if (!data.success) {
+      div.innerHTML = `<div class="alert alert-danger"><i class="bi bi-x-circle-fill"></i> ${esc(data.message)}</div>`;
+      return;
+    }
+    const s = data.stats;
+
+    const pendingTotal = (s.pending_verification || 0);
+    if (pendingTotal > 0) {
+      ['badge-condutores','badge-documentos'].forEach(id => {
+        const el = document.getElementById(id);
+        el.textContent = pendingTotal;
+        el.style.display = 'inline-block';
+      });
+    }
+
+    div.innerHTML = `
+      <div class="admin-stat-card">
+        <div class="asc-icon asc-icon-primary"><i class="bi bi-people-fill"></i></div>
+        <div><span class="asc-label">Utilizadores</span><div class="asc-value">${Number(s.total_users || 0).toLocaleString('pt-PT')}</div></div>
+      </div>
+      <div class="admin-stat-card">
+        <div class="asc-icon asc-icon-success"><i class="bi bi-ticket-perforated-fill"></i></div>
+        <div><span class="asc-label">Reservas</span><div class="asc-value">${Number(s.total_bookings || 0).toLocaleString('pt-PT')}</div></div>
+      </div>
+      <div class="admin-stat-card">
+        <div class="asc-icon asc-icon-warning"><i class="bi bi-hourglass-split"></i></div>
+        <div><span class="asc-label">Verificações Pendentes</span><div class="asc-value">${s.pending_verification || 0}</div></div>
+      </div>`;
+    div.className = 'admin-stats-grid';
+  }
+
+  async function carregarRecentUsers() {
+    try {
+      const res   = await fetch('../backend/admin/users.php?page=1&limit=5');
+      const data  = await res.json();
+      const users = data.users || [];
+      if (users.length === 0) return;
+
+      const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      function fmtLong(d) {
+        if (!d) return '—';
+        const [y, m, dd] = d.split('-');
+        return `${parseInt(dd)} ${MESES[parseInt(m)-1]} ${y}`;
+      }
+
+      document.getElementById('recent-users-list').innerHTML = `
+        <table class="ru-table">
+          <thead><tr>
+            <th>ID</th><th>Nome</th><th>Email</th><th>Data Registo</th><th>Ação</th>
+          </tr></thead>
+          <tbody>
+          ${users.map((u, i) => {
+            const initials = (u.full_name || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+            const avatarHtml = u.avatar_url
+              ? `<img src="../${esc(u.avatar_url)}" alt="${esc(u.full_name)}">`
+              : initials;
+            const isSuspended = u.status === 'SUSPENDED';
+            return `<tr>
+              <td class="ru-id">#${1000 + i + 1}</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="ru-avatar">${avatarHtml}</div>
+                  <span style="font-weight:600">${esc(u.full_name)}</span>
+                </div>
+              </td>
+              <td style="color:var(--muted)">${esc(u.email)}</td>
+              <td>${fmtLong(u.created_at?.slice(0,10))}</td>
+              <td>
+                ${isSuspended
+                  ? `<button class="btn-ver" onclick="atualizarEstadoUser(event,'${u.id}','ACTIVE')">Reativar</button>`
+                  : `<button class="btn-banir" onclick="atualizarEstadoUser(event,'${u.id}','SUSPENDED')">Banir</button>`
+                }
+              </td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table>`;
+    } catch {}
+  }
+
+  let paginaAtual = 1;
+
+  async function carregarUtilizadores(pagina, search) {
+    paginaAtual = pagina;
+    const searchVal = search || document.getElementById('search-user').value.trim();
+    const params = `page=${pagina}&limit=20${searchVal ? '&search=' + encodeURIComponent(searchVal) : ''}`;
+    const res  = await fetch(`../backend/admin/users.php?${params}`);
+    const data = await res.json();
+    const div  = document.getElementById('utilizadores-conteudo');
+    const users = data.users || [];
+
+    if (users.length === 0) {
+      div.innerHTML = '<div class="empty-state"><i class="bi bi-people"></i><p>Sem utilizadores encontrados.</p></div>';
+      return;
+    }
+
+    const roleLabel  = { PASSENGER: 'Passageiro', DRIVER: 'Condutor', BOTH: 'Condutor/Passageiro', ADMIN: 'Admin' };
+    const statusLabel = { ACTIVE: 'Ativo', SUSPENDED: 'Suspenso', PENDING: 'Pendente', VERIFIED: 'Verificado' };
+    const statusBadge = { ACTIVE: 'badge-active', SUSPENDED: 'badge-cancelled', PENDING: 'badge-pending', VERIFIED: 'badge-confirmed' };
+
+    div.innerHTML = `<div class="recent-users-card"><table class="ru-table"><thead><tr>
+        <th>ID</th><th>Nome</th><th>Tipo</th><th>Estado</th><th>Data Registo</th><th>Ação</th>
+      </tr></thead><tbody>
+      ${users.map((u, i) => {
+        const initials = (u.full_name || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+        const avatarHtml = u.avatar_url ? `<img src="../${esc(u.avatar_url)}" alt="">` : initials;
+        return `<tr>
+        <td class="ru-id">#${(pagina - 1) * 20 + i + 1001}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="ru-avatar">${avatarHtml}</div>
+            <div>
+              <div style="font-weight:600;color:var(--dark)">${esc(u.full_name)}</div>
+            </div>
+          </div>
+        </td>
+        <td style="color:var(--muted)">${roleLabel[u.role] || u.role}</td>
+        <td><span class="badge ${statusBadge[u.status] || 'badge-pending'}">${statusLabel[u.status] || u.status}</span></td>
+        <td>${fmtLong(u.created_at?.slice(0,10))}</td>
+        <td>
+          ${u.status !== 'SUSPENDED'
+            ? `<button class="btn-banir" onclick="atualizarEstadoUser(event,'${u.id}','SUSPENDED')">Banir</button>`
+            : `<button class="btn-ver" onclick="atualizarEstadoUser(event,'${u.id}','ACTIVE')">Reativar</button>`
+          }
+        </td>
+      </tr>`;}).join('')}
+      </tbody></table></div>`;
+
+    const total = data.pagination?.total || data.total || users.length;
+    const totalPags = Math.ceil(total / 20);
+    const pDiv = document.getElementById('paginacao-utilizadores');
+    if (totalPags <= 1) { pDiv.innerHTML = ''; return; }
+    pDiv.innerHTML = Array.from({length: totalPags}, (_, i) => i + 1).map(i =>
+      `<a href="#" onclick="carregarUtilizadores(${i});return false" class="pag-item ${i === pagina ? 'active' : ''}">${i}</a>`
+    ).join('');
+  }
+
+  function pesquisarUtilizadores(e) {
+    e.preventDefault();
+    carregarUtilizadores(1);
+  }
+
+  async function atualizarEstadoUser(e, userId, status) {
+    e.preventDefault();
+    if (!await confirmar(status === 'SUSPENDED' ? 'O utilizador ficará suspenso e não poderá aceder à plataforma.' : 'O utilizador voltará a ter acesso à plataforma.', { titulo: status === 'SUSPENDED' ? 'Suspender utilizador?' : 'Reativar utilizador?', okLabel: status === 'SUSPENDED' ? 'Suspender' : 'Reativar', okClass: status === 'SUSPENDED' ? 'btn-danger' : 'btn-ok' })) return;
+    const res  = await fetch(`../backend/admin/update_user_status.php?id=${userId}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(status === 'SUSPENDED' ? 'Utilizador suspenso.' : 'Utilizador reativado.', status === 'SUSPENDED' ? 'warning' : 'success');
+      await carregarUtilizadores(paginaAtual);
+    } else {
+      toast(data.message || 'Erro.', 'danger');
+    }
+  }
+
+  async function carregarCondutores() {
+    const res  = await fetch('../backend/admin/drivers_pending.php');
+    const data = await res.json();
+    const div  = document.getElementById('condutores-conteudo');
+    const drivers = data.drivers || [];
+
+    if (drivers.length === 0) {
+      div.innerHTML = '<div class="empty-state"><i class="bi bi-person-check"></i><p>Sem condutores pendentes de aprovação.</p></div>';
+      return;
+    }
+
+    div.innerHTML = `<div class="recent-users-card"><h3>Condutores Pendentes</h3><table class="ru-table"><thead><tr>
+        <th>Condutor</th><th>Telemóvel</th><th>Submetido em</th><th>Ações</th>
+      </tr></thead><tbody>
+      ${drivers.map(d => {
+        const initials = (d.full_name || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+        const avatarHtml = d.avatar_url ? `<img src="../${esc(d.avatar_url)}" alt="">` : initials;
+        return `<tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="ru-avatar">${avatarHtml}</div>
+            <div>
+              <div style="font-weight:600;color:var(--dark)">${esc(d.full_name)}</div>
+              <div style="font-size:0.78rem;color:var(--muted)">${esc(d.email)}</div>
+            </div>
+          </div>
+        </td>
+        <td style="color:var(--muted)">${esc(d.phone || '—')}</td>
+        <td>${fmtLong(d.uploaded_at?.slice(0,10))}</td>
+        <td style="white-space:nowrap">
+          <a href="#" onclick="rever(event,'driver','${d.id}','APPROVED')" class="action-link action-ok" style="margin-right:14px"><i class="bi bi-check-circle-fill"></i> Aprovar</a>
+          <a href="#" onclick="rever(event,'driver','${d.id}','REJECTED')" class="action-link action-danger"><i class="bi bi-x-circle-fill"></i> Rejeitar</a>
+        </td>
+      </tr>`;}).join('')}
+      </tbody></table></div>`;
+  }
+
+  async function carregarDocumentos() {
+    const res  = await fetch('../backend/admin/documents.php');
+    const data = await res.json();
+    const div  = document.getElementById('documentos-conteudo');
+    const docs = data.documents || [];
+
+    if (docs.length === 0) {
+      div.innerHTML = '<div class="empty-state"><i class="bi bi-file-earmark-check"></i><p>Sem documentos pendentes de revisão.</p></div>';
+      return;
+    }
+
+    const tipoLabel = { LICENSE: 'Carta de Condução', ID: 'Cartão de Cidadão', INSURANCE: 'Seguro' };
+
+    div.innerHTML = `<div class="recent-users-card"><h3>Documentos para Revisão</h3><table class="ru-table"><thead><tr>
+        <th>Utilizador</th><th>Tipo</th><th>Enviado em</th><th>Ficheiro</th><th>Ações</th>
+      </tr></thead><tbody>
+      ${docs.map(d => {
+        const initials = (d.full_name || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+        const avatarHtml = d.avatar_url ? `<img src="../${esc(d.avatar_url)}" alt="">` : initials;
+        const ext = (d.file_url || '').split('.').pop().toLowerCase();
+        const fileHtml = d.file_url
+          ? ext === 'pdf'
+            ? `<a href="../${esc(d.file_url)}" target="_blank" class="action-link" style="color:var(--danger)"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</a>`
+            : `<a href="../${esc(d.file_url)}" target="_blank"><img src="../${esc(d.file_url)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border)"></a>`
+          : '—';
+        return `<tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="ru-avatar">${avatarHtml}</div>
+            <div>
+              <div style="font-weight:600;color:var(--dark)">${esc(d.full_name || '—')}</div>
+              <div style="font-size:0.78rem;color:var(--muted)">${esc(d.email || '—')}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="badge badge-pending">${tipoLabel[d.type] || d.type}</span></td>
+        <td>${fmtLong(d.uploaded_at?.slice(0,10))}</td>
+        <td>${fileHtml}</td>
+        <td style="white-space:nowrap">
+          <a href="#" onclick="rever(event,'document','${d.id}','APPROVED')" class="action-link action-ok" style="margin-right:14px"><i class="bi bi-check-circle-fill"></i> Aprovar</a>
+          <a href="#" onclick="rever(event,'document','${d.id}','REJECTED')" class="action-link action-danger"><i class="bi bi-x-circle-fill"></i> Rejeitar</a>
+        </td>
+      </tr>`;}).join('')}
+      </tbody></table></div>`;
+  }
+
+  async function rever(e, tipo, id, status) {
+    e.preventDefault();
+    const endpoint = tipo === 'driver'
+      ? `../backend/admin/review_driver.php?id=${id}`
+      : `../backend/admin/review_document.php?id=${id}`;
+    if (!await confirmar(status === 'APPROVED' ? 'O condutor ficará aprovado e poderá aceitar passageiros.' : 'O pedido será rejeitado.', { titulo: status === 'APPROVED' ? 'Aprovar?' : 'Rejeitar?', okLabel: status === 'APPROVED' ? 'Aprovar' : 'Rejeitar', okClass: status === 'APPROVED' ? 'btn-ok' : 'btn-danger' })) return;
+    const res  = await fetch(endpoint, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: status === 'APPROVED' ? 'approve' : 'reject' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(status === 'APPROVED' ? 'Aprovado com sucesso.' : 'Rejeitado.', status === 'APPROVED' ? 'success' : 'warning');
+      if (tipo === 'driver') await carregarCondutores();
+      else await carregarDocumentos();
+    } else {
+      toast(data.message || 'Erro.', 'danger');
+    }
+  }
+
+  async function carregarAtividade() {
+    const res  = await fetch('../backend/admin/activity.php');
+    const data = await res.json();
+    const div  = document.getElementById('atividade-conteudo');
+    const rows = data.rows || [];
+
+    if (rows.length === 0) {
+      div.innerHTML = '<div class="empty-state"><i class="bi bi-activity"></i><p>Sem atividade recente.</p></div>';
+      return;
+    }
+
+    const maxTrips = Math.max(...rows.map(r => Number(r.trips)), 1);
+
+    div.innerHTML = `
+      <div class="recent-users-card">
+        <h3>Atividade — últimos 28 dias</h3>
+        <table class="ru-table"><thead><tr>
+          <th>Dia</th><th style="width:60%">Viagens</th><th>Total</th>
+        </tr></thead><tbody>
+        ${rows.map(r => {
+          const pct = Math.round(Number(r.trips) / maxTrips * 100);
+          return `<tr>
+            <td style="white-space:nowrap;font-weight:500;color:var(--dark)">${fmtLong(r.day)}</td>
+            <td>
+              <div class="act-bar-wrap">
+                <div class="act-bar-track">
+                  <div class="act-bar-fill" style="width:${pct}%"></div>
+                </div>
+              </div>
+            </td>
+            <td class="act-bar-num">${r.trips}</td>
+          </tr>`;
+        }).join('')}
+        </tbody></table>
+      </div>`;
+  }
+
+  async function carregarBadgeReclamacoes() {
+    try {
+      const data = await fetch('../backend/complaints/index.php?status=PENDING').then(r => r.json());
+      const n    = (data.complaints || []).length;
+      const el   = document.getElementById('badge-reclamacoes');
+      if (n > 0) { el.textContent = n; el.style.display = 'inline-block'; }
+    } catch {}
+  }
+
+  const TYPE_PT = { NO_SHOW: 'Não apareceu', BEHAVIOR: 'Comportamento', PAYMENT: 'Pagamento', OTHER: 'Outro' };
+  const CPL_STATUS_PT  = { PENDING: 'Pendente', REVIEWED: 'Em análise', CLOSED: 'Encerrada' };
+  const CPL_STATUS_BADGE = { PENDING: 'badge-pending', REVIEWED: 'badge-aguardar', CLOSED: 'badge-completed' };
+
+  async function carregarReclamacoes() {
+    const div  = document.getElementById('reclamacoes-conteudo');
+    div.innerHTML = '<p style="color:var(--muted)">A carregar...</p>';
+    try {
+      const data       = await fetch('../backend/complaints/index.php').then(r => r.json());
+      const complaints = data.complaints || [];
+
+      if (complaints.length === 0) {
+        div.innerHTML = '<div class="empty-state"><i class="bi bi-flag"></i><p>Sem reclamações registadas.</p></div>';
+        return;
+      }
+
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <h2 style="margin:0"><i class="bi bi-flag-fill"></i> Reclamações</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" onclick="filtrarReclamacoes('')"     class="btn-ver" id="cpl-f-all">Todas</button>
+            <button type="button" onclick="filtrarReclamacoes('PENDING')"  class="btn-ver" id="cpl-f-pending">Pendentes</button>
+            <button type="button" onclick="filtrarReclamacoes('REVIEWED')" class="btn-ver" id="cpl-f-reviewed">Em análise</button>
+            <button type="button" onclick="filtrarReclamacoes('CLOSED')"   class="btn-ver" id="cpl-f-closed">Encerradas</button>
+          </div>
+        </div>
+        <div id="cpl-lista">
+          ${renderReclamacoes(complaints)}
+        </div>`;
+
+      window._allComplaints = complaints;
+    } catch (e) {
+      div.innerHTML = `<div class="alert alert-danger"><i class="bi bi-x-circle-fill"></i> Erro ao carregar reclamações.</div>`;
+    }
+  }
+
+  function renderReclamacoes(list) {
+    if (list.length === 0) return '<div class="empty-state" style="padding:20px 0"><i class="bi bi-flag"></i><p>Sem reclamações neste filtro.</p></div>';
+    return `<div class="recent-users-card"><table class="ru-table"><thead><tr>
+        <th>Reclamante</th><th>Reclamado</th><th>Tipo</th><th>Descrição</th><th>Data</th><th>Estado</th><th>Ação</th>
+      </tr></thead><tbody>
+      ${list.map(c => `<tr>
+        <td>
+          <div style="font-weight:600;color:var(--dark);font-size:0.875rem">${esc(c.reporter_name)}</div>
+          <div style="font-size:0.75rem;color:var(--muted)">${esc(c.reporter_email)}</div>
+        </td>
+        <td>
+          <div style="font-weight:600;color:var(--dark);font-size:0.875rem">${esc(c.reported_name)}</div>
+          <div style="font-size:0.75rem;color:var(--muted)">${esc(c.reported_email)}</div>
+        </td>
+        <td><span class="badge badge-pending">${TYPE_PT[c.type] || c.type}</span></td>
+        <td style="max-width:200px;font-size:0.82rem;color:var(--muted)">${esc(c.description.slice(0,80))}${c.description.length > 80 ? '…' : ''}</td>
+        <td style="white-space:nowrap;color:var(--muted);font-size:0.82rem">${fmtLong(c.created_at?.slice(0,10))}</td>
+        <td><span class="badge ${CPL_STATUS_BADGE[c.status] || 'badge-pending'}">${CPL_STATUS_PT[c.status] || c.status}</span></td>
+        <td style="white-space:nowrap">
+          ${c.status !== 'REVIEWED' ? `<a href="#" onclick="updateCplStatus(event,'${c.id}','REVIEWED')" class="action-link action-ok" style="margin-right:10px"><i class="bi bi-eye-fill"></i> Analisar</a>` : ''}
+          ${c.status !== 'CLOSED'   ? `<a href="#" onclick="updateCplStatus(event,'${c.id}','CLOSED')"   class="action-link" style="color:var(--muted)"><i class="bi bi-check2-all"></i> Encerrar</a>` : ''}
+        </td>
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  }
+
+  function filtrarReclamacoes(status) {
+    const list = status ? (window._allComplaints || []).filter(c => c.status === status) : (window._allComplaints || []);
+    document.getElementById('cpl-lista').innerHTML = renderReclamacoes(list);
+    ['cpl-f-all','cpl-f-pending','cpl-f-reviewed','cpl-f-closed'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.classList.remove('active', 'filter-btn');
+    });
+    const activeMap = { '': 'cpl-f-all', 'PENDING': 'cpl-f-pending', 'REVIEWED': 'cpl-f-reviewed', 'CLOSED': 'cpl-f-closed' };
+    const activeId  = activeMap[status];
+    if (activeId) {
+      const btn = document.getElementById(activeId);
+      if (btn) { btn.classList.add('filter-btn', 'active'); }
+    }
+  }
+
+  async function updateCplStatus(e, id, status) {
+    e.preventDefault();
+    const res  = await fetch(`../backend/complaints/update_status.php?id=${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(data.message, 'success');
+      await carregarReclamacoes();
+      await carregarBadgeReclamacoes();
+    } else {
+      toast(data.message || 'Erro.', 'danger');
+    }
+  }
+
+  const _MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  function fmtLong(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${parseInt(dd)} ${_MESES[parseInt(m)-1]} ${y}`; }
+  function fmt(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  let _charts = {};
+
+  async function carregarEstatisticas() {
+    Object.values(_charts).forEach(c => { try { c.destroy(); } catch {} });
+    _charts = {};
+
+    let d = null;
+    try {
+      const res = await fetch('../backend/admin/stats_charts.php');
+      if (res.ok) { const j = await res.json(); if (j.success) d = j; }
+    } catch {}
+
+    const meses = d?.meses || {
+      labels: ['Dez', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai'],
+      data:   [42, 58, 71, 89, 103, 118]
+    };
+    const estados = d?.estados || { confirmadas: 45, concluidas: 38, canceladas: 12, pendentes: 5 };
+    const semana  = d?.semana  || {
+      labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+      data:   [23, 18, 21, 25, 67, 89, 54]
+    };
+    const topRotas = d?.top_rotas || {
+      labels: ['Lisboa → Porto', 'Porto → Lisboa', 'Lisboa → Faro', 'Setúbal → Lisboa', 'Coimbra → Lisboa'],
+      data:   [145, 132, 87, 64, 58]
+    };
+    const m = d?.metricas || {
+      preco_medio: 12.4, desvio_padrao: 4.2,
+      taxa_confirmacao: 83, taxa_cancelamento: 12,
+      avaliacao_media: 4.7, total_rotas: 47
+    };
+
+    document.getElementById('estat-metrics').innerHTML = `
+      <div class="estat-metric">
+        <div class="estat-metric-label">Preço médio</div>
+        <div class="estat-metric-value">${Number(m.preco_medio).toFixed(2).replace('.',',')}€</div>
+        <div class="estat-metric-sub">±${Number(m.desvio_padrao).toFixed(2).replace('.',',')}€ desvio padrão</div>
+      </div>
+      <div class="estat-metric">
+        <div class="estat-metric-label">Taxa de confirmação</div>
+        <div class="estat-metric-value" style="color:var(--success)">${Math.round(m.taxa_confirmacao)}%</div>
+        <div class="estat-metric-sub">reservas confirmadas</div>
+      </div>
+      <div class="estat-metric">
+        <div class="estat-metric-label">Taxa de cancelamento</div>
+        <div class="estat-metric-value" style="color:var(--danger)">${Math.round(m.taxa_cancelamento)}%</div>
+        <div class="estat-metric-sub">reservas canceladas</div>
+      </div>
+      <div class="estat-metric">
+        <div class="estat-metric-label">Avaliação média</div>
+        <div class="estat-metric-value" style="color:var(--warning)">★ ${Number(m.avaliacao_media).toFixed(1)}</div>
+        <div class="estat-metric-sub">média dos condutores</div>
+      </div>
+      <div class="estat-metric">
+        <div class="estat-metric-label">Rotas ativas</div>
+        <div class="estat-metric-value">${m.total_rotas}</div>
+        <div class="estat-metric-sub">na plataforma</div>
+      </div>`;
+
+    Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+    Chart.defaults.color       = '#64748B';
+    const gridColor = 'rgba(226,232,240,0.8)';
+
+    _charts.mes = new Chart(document.getElementById('chart-viagens-mes'), {
+      type: 'line',
+      data: {
+        labels: meses.labels,
+        datasets: [{
+          label: 'Reservas',
+          data: meses.data,
+          borderColor: '#2563EB',
+          backgroundColor: 'rgba(37,99,235,0.07)',
+          borderWidth: 2.5,
+          tension: 0.4,
+          fill: true,
+          pointRadius: 5,
+          pointBackgroundColor: '#2563EB',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: gridColor }, ticks: { precision: 0 } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    const totalRes = estados.confirmadas + estados.concluidas + estados.canceladas + estados.pendentes;
+    _charts.estados = new Chart(document.getElementById('chart-reservas-estado'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Confirmadas', 'Concluídas', 'Canceladas', 'Pendentes'],
+        datasets: [{
+          data: [estados.confirmadas, estados.concluidas, estados.canceladas, estados.pendentes],
+          backgroundColor: ['#2563EB', '#16A34A', '#DC2626', '#D97706'],
+          borderWidth: 3,
+          borderColor: '#ffffff',
+          hoverOffset: 8,
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '66%',
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 14, font: { size: 12 }, usePointStyle: true, pointStyleWidth: 8 } },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const pct = totalRes ? Math.round(ctx.parsed / totalRes * 100) : 0;
+                return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    _charts.semana = new Chart(document.getElementById('chart-viagens-semana'), {
+      type: 'bar',
+      data: {
+        labels: semana.labels,
+        datasets: [{
+          label: 'Viagens',
+          data: semana.data,
+          backgroundColor: semana.labels.map((_, i) =>
+            i >= 4 ? 'rgba(37,99,235,0.85)' : 'rgba(37,99,235,0.32)'
+          ),
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: gridColor }, ticks: { precision: 0 } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    _charts.rotas = new Chart(document.getElementById('chart-top-rotas'), {
+      type: 'bar',
+      data: {
+        labels: topRotas.labels,
+        datasets: [{
+          label: 'Reservas',
+          data: topRotas.data,
+          backgroundColor: 'rgba(22,163,74,0.72)',
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, grid: { color: gridColor }, ticks: { precision: 0 } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  init();

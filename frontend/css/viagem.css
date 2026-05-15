@@ -1,0 +1,99 @@
+
+    .viagem-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 20px;
+      align-items: start;
+    }
+    .viagem-right { position: sticky; top: 110px; }
+    @media (max-width: 860px) {
+      .viagem-layout { grid-template-columns: 1fr; }
+      .viagem-right { position: static; }
+    }
+
+    .seg-card {
+      background: #FFF7ED;
+      border: 1.5px solid #FED7AA;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+    }
+    .seg-card-header {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.8rem; font-weight: 700; color: #92400E;
+      text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px;
+    }
+    .seg-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-seg-share {
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 10px 16px; border-radius: 99px; border: none; cursor: pointer;
+      font-size: 0.82rem; font-weight: 600; font-family: inherit;
+      background: var(--primary); color: #fff;
+      transition: background 150ms; min-width: 130px;
+    }
+    .btn-seg-share:hover { background: var(--primary-dark); }
+    .btn-sos {
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 10px 16px; border-radius: 99px; border: none; cursor: pointer;
+      font-size: 0.82rem; font-weight: 700; font-family: inherit;
+      background: #DC2626; color: #fff;
+      transition: background 150ms; min-width: 100px; text-decoration: none;
+    }
+    .btn-sos:hover { background: #B91C1C; color: #fff; text-decoration: none; }
+    .seg-hint { font-size: 0.75rem; color: #92400E; margin-top: 10px; line-height: 1.5; }
+
+
+    .viagem-route-header {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .vrh-timeline { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; gap: 0; }
+    .vrh-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .vrh-dot-green { background: var(--success); }
+    .vrh-dot-blue  { background: var(--primary); }
+    .vrh-line { width: 2px; height: 24px; background: var(--border); }
+    .vrh-cities { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+    .vrh-city { font-size: 1.05rem; font-weight: 700; color: var(--dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vrh-time { font-size: 0.78rem; font-weight: 500; color: var(--muted); margin-left: 6px; }
+    .vrh-chips { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; align-items: flex-end; }
+    .vrh-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 99px;
+      font-size: 0.78rem; font-weight: 600;
+      background: var(--bg); color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .vrh-chip-price { background: var(--success-light); color: var(--success); border-color: transparent; }
+
+
+    .info-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 0.875rem;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row-label { color: var(--muted); font-weight: 500; }
+    .info-row-value { font-weight: 600; color: var(--dark); text-align: right; }
+
+
+    .summary-box {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 18px; margin: 14px 0;
+    }
+    .summary-row { display: flex; justify-content: space-between; font-size: 0.875rem; padding: 5px 0; }
+    .summary-row.total {
+      border-top: 2px solid var(--border); margin-top: 8px;
+      padding-top: 12px; font-weight: 700; font-size: 1rem;
+    }
+
+
+    .parem-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; font-size: 0.875rem; }
+    .parem-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .parem-addr { color: var(--text); line-height: 1.4; }
+    .parem-time { font-size: 0.78rem; font-weight: 700; color: var(--dark); min-width: 36px; margin-top: 2px; }
